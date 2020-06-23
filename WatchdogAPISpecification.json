@@ -1,0 +1,40 @@
+{
+	"openapi": "3.0.2",
+	"info": {
+		"title": "Watchdog",
+		"version": "0.1"
+	},
+	"paths": {
+		"/livestreaming": {
+			"post": {
+				"description": "",
+				"resposes": {
+					"200": {
+						"description": "OKAY: Here is the IP of the camera",
+						"content": {
+							"application/json":{
+								"schema": {
+									"type": "string",
+									"items": {
+										"ipaddress": "https://localhost:4000"
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "UNAUTHORISED: You do not have access to this stream"
+					},
+					"500": {
+						"description":"Internal Server Error"
+					},
+					"503": {
+						"description": "Service Unavailable: Stream appears to be down"
+					}
+				}
+			}
+		},
+		"/installation": {},
+		"/crud": {}
+	}
+}
