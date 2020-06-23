@@ -1,0 +1,47 @@
+swagger: '2.0'
+# Added by API Auto Mocking Plugin
+host: lynksolutions.tuks
+basePath: /lynksolutions/Watchdog/1.0.0
+schemes:
+ - https
+ - http
+info:
+  description: |
+    This is a sample Petstore server.  You can find 
+    out more about Swagger at 
+    [http://swagger.io](http://swagger.io) or on 
+    [irc.freenode.net, #swagger](http://swagger.io/irc/).
+  version: 1.0.0
+  title: Watchdog Security
+  contact:
+    email: lynksolutions.tuks@outlook.com
+paths:
+  /user:
+    post:
+      summary: Retrieve user data
+  /user/gettoken:
+    post:
+      summary: Retrieve JWT Token for user
+  /user/getcameras:
+    post:
+      summary: Retrieve a list of Cameras belonging to the User
+  /live:
+    post:
+      summary: get a live stream from the ip camera
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - in: body
+        name: ipcamera
+        description: get ip address of camera
+        required: true
+      responses:
+        405:
+          description: invalid input
+ 
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+

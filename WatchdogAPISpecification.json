@@ -5,7 +5,7 @@
 		"version": "0.1"
 	},
 	"paths": {
-		"/livestreaming": {
+		"/live": {
 			"post": {
 				"description": "",
 				"resposes": {
@@ -34,7 +34,7 @@
 				}
 			}
 		},
-		"/installation": {},
+		"/install": {},
 		"/crud": {}
 	}
 }
