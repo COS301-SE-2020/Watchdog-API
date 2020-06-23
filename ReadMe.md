@@ -14,7 +14,7 @@
 
 # TODO:
 
-- [] Create API Apecification
+- [] Create API Specification
 - [] Integrate with Cognito
 - [] Configure backed functionaily (such as Dynamo)
 
