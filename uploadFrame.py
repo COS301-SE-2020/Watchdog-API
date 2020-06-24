@@ -12,7 +12,7 @@ def gettoken_handler(event, context):
     resp["message"] = "Frame has been uploaded!"
 
     respObj = {}
-    respObj["statusCode"] = 200
+    respObj["statuscode"] = 200
     respObj["headers"] = {}
     respObj["headers"]["Content-Type"] = "application/json"
     respObj["body"] = json.dumps(resp)
