@@ -1,6 +1,6 @@
 import json
 
-print("uploadClip function")
+print("uploadFrame function")
 
 
 def gettoken_handler(event, context):
