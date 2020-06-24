@@ -8,13 +8,14 @@ def gettoken_handler(event, context):
     path = event["queryStringParams"]["path"]
     camera_id = event["queryStringParams"]["camera_id"]
     tag = event["queryStringParams"]["tag"]
-    resp = {}
-    resp["message"] = "Frame has been uploaded!"
-
-    respObj = {}
-    respObj["statuscode"] = 200
-    respObj["headers"] = {}
-    respObj["headers"]["Content-Type"] = "application/json"
-    respObj["body"] = json.dumps(resp)
-
+    resp = {
+        "message": "Frame has been uploaded!"
+    }
+    respObj = {
+        "statuscode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": json.dumps(resp)
+    }
     return respObj
