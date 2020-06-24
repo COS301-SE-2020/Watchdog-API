@@ -50,35 +50,35 @@ paths:
       produces:
         - application/json
       parameters:
-        - in: body
-          name: controlpanel
-          description: The control panel to configure.
-            schema:
-              type: object
-              required:
+      - in: body
+        name: controlpanel
+        description: The control panel to configure.
+        schema:
+            type: object
+            required:
                 - privatekey
                 - ip_address
                 - broadcast_ip
                 - physical_address
                 - cameras
-                properties:
-                  privatekey:
+        properties:
+                privatekey:
                     type: string
-                  ip_address:
+                ip_address:
                     type: string
-                  broadcast_ip:
+                broadcast_ip:
                     type: string
-                  physical_address:
+                physical_address:
                     type: string
-                  cameras:
+                cameras:
                     type: object
-              responses:
-                200:
-                  description: OK
-                401:
-                  description: unauthorised
-                500:
-                  description: server error
+        responses:
+            200:
+             description: OK
+            401:
+             description: unauthorised
+            500:
+             description: server error
   /live/uploadclip:
     post:
       summary: uploads periodically saved clips from ip camera
@@ -87,10 +87,10 @@ paths:
       produces:
         - application/json
       parameters:
-        - in: body
-          name: clipupload
-          description: The periodical video clip to upload.
-            schema:
+      - in: body
+        name: clipupload
+        description: The periodical video clip to upload.
+        schema:
               type: object
               required:
                 - time
@@ -98,7 +98,7 @@ paths:
                 - camera_id
                 - tag
                 - expiration
-                properties:
+        properties:
                   time:
                     type: string
                     format: date-time
@@ -111,13 +111,13 @@ paths:
                   expiration:
                     type: string
                     format: date-time
-              responses:
-                200:
-                  description: OK
-                401:
-                  description: unauthorised
-                500:
-                  description: server error
+      responses:
+            200:
+              description: OK
+            401:
+              description: unauthorised
+            500:
+              description: server error
   /live/uploadframe:
     post:
       summary: uploads frames from the ip camera
@@ -126,17 +126,17 @@ paths:
       produces:
         - application/json
       parameters:
-        - in: body
-          name: frame_upload
-          description: The frames to upload from the ip camera.
-            schema:
+      - in: body
+        name: frame_upload
+        description: The frames to upload from the ip camera.
+        schema:
               type: object
               required:
                 - time
                 - path #path to frame in the S3 bucket
                 - camera_id
                 - tag
-                properties:
+        properties:
                   time:
                     type: string
                     format: date-time
@@ -146,13 +146,13 @@ paths:
                     type: string
                   tag:
                     type: string
-              responses:
-                200:
-                  description: OK
-                401:
-                  description: unauthorised
-                500:
-                  description: server error
+      responses:
+        200:
+           description: OK
+        401:
+           description: unauthorised
+        500:
+           description: server error
 
 
  
