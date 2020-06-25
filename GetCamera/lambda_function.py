@@ -3,7 +3,7 @@ import json
 print("getCameras function")
 
 
-def getcamera_handler(event, context):
+def lambda_handler(event, context):
     username = event["queryStringParams"]["username"]
     token = event["queryStringParams"]["usertoken"]
 

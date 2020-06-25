@@ -3,7 +3,7 @@ import json
 print("controlPanelConfig function")
 
 
-def gettoken_handler(event, context):
+def lambda_handler(event, context):
     privatekey = event["queryStringParams"]["privatekey"]
     ip_address = event["queryStringParams"]["ip_address"]
     broadcast_ip = event["queryStringParams"]["broadcast_ip"]

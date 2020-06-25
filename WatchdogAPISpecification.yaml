@@ -153,6 +153,38 @@ paths:
            description: unauthorised
         500:
            description: server error
+  /live/uploadvideo:
+    post:
+      summary: uploads video from the ip camera
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: video_upload
+          description: The video to upload from the ip camera.
+          schema:
+            type: object
+            required:
+              - timestamp
+              - camera_id
+              - tag
+          properties:
+            time:
+              type: string
+              format: date-time
+            camera_id:
+              type: string
+            tag:
+              type: string
+      responses:
+        200:
+          description: OK
+        401:
+          description: unauthorised
+        500:
+          description: server error
 
 
  

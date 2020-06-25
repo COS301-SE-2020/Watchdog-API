@@ -1,15 +1,14 @@
 import json
 
-print("uploadFrame function")
+print("UploadVideo function")
 
 
 def lambda_handler(event, context):
-    time = event["queryStringParams"]["time"]
-    path = event["queryStringParams"]["path"]
+    timestamp = event["queryStringParams"]["timestamp"]
     camera_id = event["queryStringParams"]["camera_id"]
     tag = event["queryStringParams"]["tag"]
     resp = {
-        "message": "Frame has been uploaded!"
+        "message": "Video has been uploaded!"
     }
     respObj = {
         "statuscode": 200,
@@ -18,4 +17,5 @@ def lambda_handler(event, context):
         },
         "body": json.dumps(resp)
     }
+
     return respObj
