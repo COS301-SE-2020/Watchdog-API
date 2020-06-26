@@ -42,7 +42,7 @@ paths:
           description: OK
         405:
           description: invalid input
-  /hcp/controlpanel:
+  /hcp/controlpanelconfig:
     post:
       summary: configures the home control panel
       consumes:
@@ -56,22 +56,10 @@ paths:
         schema:
             type: object
             required:
-                - privatekey
-                - ip_address
-                - broadcast_ip
-                - physical_address
-                - cameras
+                - user_id
         properties:
-                privatekey:
+                user_id:
                     type: string
-                ip_address:
-                    type: string
-                broadcast_ip:
-                    type: string
-                physical_address:
-                    type: string
-                cameras:
-                    type: object
         responses:
             200:
              description: OK
