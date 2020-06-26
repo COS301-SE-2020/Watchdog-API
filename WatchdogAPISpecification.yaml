@@ -25,7 +25,7 @@ paths:
   /user/getcameras:
     post:
       summary: Retrieve a list of Cameras belonging to the User
-  /live:
+  /hcp:
     post:
       summary: get a live stream from the ip camera
       consumes:
@@ -42,7 +42,7 @@ paths:
           description: OK
         405:
           description: invalid input
-  /live/controlpanel:
+  /hcp/controlpanel:
     post:
       summary: configures the home control panel
       consumes:
@@ -79,7 +79,7 @@ paths:
              description: unauthorised
             500:
              description: server error
-  /live/uploadclip:
+  /hcp/uploadclip:
     post:
       summary: uploads periodically saved clips from ip camera
       consumes:
@@ -118,65 +118,26 @@ paths:
               description: unauthorised
             500:
               description: server error
-  /live/uploadframe:
+  /hcp/detectintruder:
     post:
-      summary: uploads frames from the ip camera
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-      - in: body
-        name: frame_upload
-        description: The frames to upload from the ip camera.
-        schema:
-              type: object
-              required:
-                - time
-                - path #path to frame in the S3 bucket
-                - camera_id
-                - tag
-        properties:
-                  time:
-                    type: string
-                    format: date-time
-                  path:
-                    type: string
-                  camera_id:
-                    type: string
-                  tag:
-                    type: string
-      responses:
-        200:
-           description: OK
-        401:
-           description: unauthorised
-        500:
-           description: server error
-  /live/uploadvideo:
-    post:
-      summary: uploads video from the ip camera
+      summary: used for intruder detection
       consumes:
         - application/json
       produces:
         - application/json
       parameters:
         - in: body
-          name: video_upload
-          description: The video to upload from the ip camera.
+          name: intruder_image
+          description: The intruder data.
           schema:
             type: object
             required:
-              - timestamp
-              - camera_id
-              - tag
+              - image_detected
+              - camera_detected_on
           properties:
-            time:
+            image_detected:
               type: string
-              format: date-time
-            camera_id:
-              type: string
-            tag:
+            camera_detected_on:
               type: string
       responses:
         200:
