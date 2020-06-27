@@ -11,10 +11,3 @@ for f in ./*/*.py ; do
 		--zip-file fileb://$pth
 	echo "DONE."
 done
-
-# for f in ./*.zip ; do                                                                                                                                                                                                         Initial_Setup_Gateway * ] 6:18 AM
-# 	echo "$f" | sed -E "s/^(.*)\.zip/\1/" | echo
-# 	# aws lambda update-function-code \
-#     		# --function-name  my-function \
-#     		# --zip-file fileb://my-function.zip
-# done
