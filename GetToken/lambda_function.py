@@ -4,8 +4,8 @@ print("getToken function")
 
 
 def lambda_handler(event, context):
-    username = event["queryStringParams"]["username"]
-    password = event["queryStringParams"]["password"]
+    username = event["queryStringParameters"]["username"]
+    password = event["queryStringParameters"]["password"]
     print("the user name provided was " + username)
     resp = {
         "token": "slemtgf87weeuoasjhfuiew",

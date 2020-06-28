@@ -57,7 +57,7 @@ def lambda_handler(event, context, dynamodb=None):
     # user_record = user_data_tbl.query(KeyConditionExpression=Key('UserID').eq(uuid))
     user_record = user_data_tbl.scan()
     user_record = json.loads(user_record)
-    # print(f"Record: {user_record}")
+    print(f"Record: {user_record}")
 
     try:
         # functionality
@@ -75,7 +75,7 @@ def lambda_handler(event, context, dynamodb=None):
         # response = f"Could not find the target function {target} that you were looking for"
         statuscode = 200
     except Exception as e:
-        # print(f"Exception! {e}")
+        print(f"Exception! {e}")
         response = e
         statuscode = 501
         response = user_record
@@ -88,5 +88,6 @@ def lambda_handler(event, context, dynamodb=None):
     }
 
     # user_id = event["queryStringParams"]["user_id"]
-    print(respObj)
+
     return respObj
+

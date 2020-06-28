@@ -4,8 +4,8 @@ print("getCameras function")
 
 
 def lambda_handler(event, context):
-    username = event["queryStringParams"]["username"]
-    token = event["queryStringParams"]["usertoken"]
+    username = event["queryStringParameters"]["username"]
+    token = event["queryStringParameters"]["usertoken"]
 
     print("the user name provided was " + username)
     print("the token provided was " + token)
@@ -19,7 +19,7 @@ def lambda_handler(event, context):
         "headers": {
             "Content-Type": "application/json"
         },
-        "body": json.dumps(resp)
+        "body": resp
     }
 
     return respObj

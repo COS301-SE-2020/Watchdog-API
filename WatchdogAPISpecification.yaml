@@ -25,6 +25,23 @@ paths:
   /user/getcameras:
     post:
       summary: Retrieve a list of Cameras belonging to the User
+  /user/historical:
+    get:
+      summary: Fetches the historical footage of the user
+      consumes:
+        - application/json
+      produces:
+          - application/json
+      parameters:
+        - in: body
+          name: user_id
+          description: ID of the user
+          required: true
+      responses:
+        200:
+          description: OK
+        405:
+          description: invalid input
   /hcp:
     post:
       summary: get a live stream from the ip camera
@@ -127,6 +144,56 @@ paths:
               type: string
             camera_detected_on:
               type: string
+      responses:
+        200:
+          description: OK
+        401:
+          description: unauthorised
+        500:
+          description: server error
+  /hcp/registersite:
+    post:
+      summary: uploads periodically saved clips from ip camera
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: controlpanel
+          description: The home control panel to register.
+          schema:
+            type: object
+            required:
+              - site_id
+          properties:
+            site_id:
+              type: object
+      responses:
+        200:
+          description: OK
+        401:
+          description: unauthorised
+        500:
+          description: server error
+  /hcp/registercamera:
+    post:
+      summary: registers a camera to a control panel
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: IPcamera
+          description: The IP camera to register.
+          schema:
+            type: object
+            required:
+              - camera_id
+          properties:
+            camera_id:
+              type: object
       responses:
         200:
           description: OK
