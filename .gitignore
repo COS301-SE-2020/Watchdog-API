@@ -1,2 +1,5 @@
 .ipynb_checkpoints
 .DS_Store
+output.log
+notes.md
+.vscode/settings.json

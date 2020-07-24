@@ -4,107 +4,44 @@ info:
   description: "The API for the Watchdog Security System"
   version: "1.0.0"
   title: "Watchdog Security"
-host: "aprebrte8g.execute-api.af-south-1.amazonaws.com"
-basePath: "/beta"
+host: "b534kvo5c6.execute-api.af-south-1.amazonaws.com"
+basePath: "/testing"
 schemes:
 - "https"
 paths:
-  /DetectIntruder:
-    x-amazon-apigateway-any-method:
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - sigv4: []
-      x-amazon-apigateway-integration:
-        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DetectIntruder/invocations"
-        responses:
-          .*:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        type: "aws_proxy"
-  /UploadClip:
-    x-amazon-apigateway-any-method:
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - sigv4: []
-      x-amazon-apigateway-integration:
-        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:UploadClip/invocations"
-        responses:
-          .*:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        type: "aws_proxy"
   /cameras:
     get:
-      consumes:
-      - "application/json"
       parameters:
+      - name: "site_id"
+        in: "query"
+        required: false
+        type: "string"
       - name: "camera_id"
         in: "query"
-        required: true
+        required: false
         type: "string"
       responses:
         200:
           description: "200 response"
       security:
-      - Cognito_Auth: []
+      - WatchdogAuthoriser: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/Query"
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
         responses:
           default:
             statusCode: "200"
-        requestTemplates:
-          application/json: "{\n    \"TableName\": \"UserData\",\n    \"KeyConditionExpression\"\
-            : \"user_id = :v1\",\n    \"ExpressionAttributeValues\": {\n        \"\
-            :v1\": {\"S\": \"$input.params('user_id')\"}\n    },\n    \"ProjectionExpression\"\
-            : \"control_panel\"\n}"
-        passthroughBehavior: "when_no_templates"
+        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        type: "aws"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     post:
-      consumes:
-      - "application/json"
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
-      x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/PutItem"
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"TableName\"\
-            : \"Cameras\",\n    \"Item\": {\n        \"user_id\": {\"S\", \"$inputRoot.user_id\"\
-            },\n        \"site_id\":{\"S\":\"$inputRoot.site_id\"},\n        \"cameras\"\
-            : {\n        #foreach($cameraId in $inputRoot.cameras.keySet())\n    \
-            \    #set($camera = $inputRoot.cameras.get($cameraId))\n            \"\
-            $cameraId\": {\"M\": {\n                    \"name\": {\"S\": \"$camera.name\"\
-            },\n                    \"ip_address\": {\"M\": {\n                  \
-            \      \"protocal\": {\"S\": \"$camera.ip_address.protocal\"},\n     \
-            \                   \"address\": {\"S\": \"$camera.ip_address.address\"\
-            },\n                        \"port\": {\"S\": \"$camera.ip_address.port\"\
-            },\n                        \"path\": {\"S\": \"$camera.ip_address.path\"\
-            }\n                    }}\n            }}\n        #if($foreach.hasNext),#end\n\
-            \        #end\n        }\n         \n\n    }\n}\n\n"
-        passthroughBehavior: "when_no_templates"
-        httpMethod: "POST"
-        type: "aws"
-    put:
-      consumes:
-      - "application/json"
       parameters:
+      - name: "site_id"
+        in: "query"
+        required: true
+        type: "string"
       - name: "camera_id"
         in: "query"
         required: true
@@ -113,135 +50,25 @@ paths:
         200:
           description: "200 response"
       security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
-        \ and headers"
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/PutItem"
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
         responses:
           default:
             statusCode: "200"
-        requestTemplates:
-          application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"TableName\"\
-            : \"Cameras\",\n    \"Item\": {\n        \"user_id\": {\"S\", \"$inputRoot.user_id\"\
-            },\n        \"cameras\": {\n            \"L\": [\n                #foreach($cam\
-            \ in $inputRoot.cameras)\n                {\n                    \"M\"\
-            : {\n                        \"camera_id\": {\"S\": \"$cam.camera_id\"\
-            },\n                        \"name\": {\"S\": \"$cam.name\"}\n       \
-            \             }\n                }\n                #if($foreach.hasNext),#end\n\
-            \                #end\n            ]\n        }\n    }\n}"
-        passthroughBehavior: "when_no_templates"
+        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        type: "aws"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     delete:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "camera_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate query string parameters and\
-        \ headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-  /controlpanel:
-    get:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "site_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate query string parameters and\
-        \ headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-    post:
-      consumes:
-      - "application/json"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-    put:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "site_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
-        \ and headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-    delete:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "site_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate query string parameters and\
-        \ headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-  /detectintruder:
-    get:
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
-      - name: "user_id"
+      - name: "camera_id"
         in: "query"
         required: true
         type: "string"
@@ -249,44 +76,141 @@ paths:
         200:
           description: "200 response"
       security:
-      - Cognito_Auth: []
+      - sigv4: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/Query"
         responses:
           default:
             statusCode: "200"
             responseTemplates:
-              application/json: "#set($inputRoot = $input.path('$'))\n#set($items\
-                \ = $inputRoot.Items)\n{\n    \"status\": \"OK\",\n    \"data\": [\n\
-                \        #foreach($item in $items)\n        {\n\n            \"training\"\
-                : [\n                #foreach($img in $item.identities.M.training.L)\n\
-                \                \"$img.S\"\n                #if($foreach.hasNext),#end\n\
-                \                #end\n            ],\n            \"sns\": {\n  \
-                \              \"security_company\": \"$item.preferences.M.sns.M.security_company.S\"\
-                ,\n                \"type\": \"$item.preferences.M.sns.M.type.S\"\
-                ,\n                \"value\": \"$item.preferences.M.sns.M.value.S\"\
-                \n            }\n\n        }\n        #if($foreach.hasNext),#end\n\
-                \        #end\n    ]\n}"
+              application/json: "{ \n\"statusCode\": 200\n}"
         requestTemplates:
-          application/json: "{\n    \"TableName\": \"UserData\",\n    \"KeyConditionExpression\"\
-            : \"user_id = :v1\",\n    \"ExpressionAttributeValues\": {\n        \"\
-            :v1\": {\"S\": \"$input.params('user_id')\"}\n    },\n    \"ProjectionExpression\"\
-            : \"preferences.sns, identities.training\"\n}"
+          application/json: "{\n\"statusCode\" : 200,\n\"user_id\" : { \"S\": \"$input.path('$.user_id')\"\
+            \ } \n}"
         passthroughBehavior: "when_no_templates"
+        type: "mock"
+  /controlpanel:
+    get:
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        type: "aws"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     post:
       responses:
         200:
           description: "200 response"
       security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    delete:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "site_id"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - sigv4: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseTemplates:
+              application/json: "{ \n\"statusCode\" : 200\n}"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200,\n \"user_id\" :  { \"S\": \"$input.path('user_id')\"\
+            \ },\n \"broadcast\" : { \"S\": \"$input.path('broadcast')\"}\n}"
+        passthroughBehavior: "when_no_templates"
+        type: "mock"
+  /detectintruder:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
       x-amazon-apigateway-integration:
         uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DetectIntruder/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
         responses:
           default:
             statusCode: "200"
@@ -296,149 +220,479 @@ paths:
         type: "aws_proxy"
   /identities:
     get:
-      consumes:
-      - "application/json"
       parameters:
       - name: "identityname"
         in: "query"
         required: false
         type: "string"
-      responses: {}
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - WatchdogAuthoriser: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
         responses:
           default:
             statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
         passthroughBehavior: "when_no_match"
-        type: "mock"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     post:
-      consumes:
-      - "application/json"
-      responses: {}
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
       x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
         responses:
           default:
             statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
         passthroughBehavior: "when_no_match"
-        type: "mock"
-    put:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "identityname"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
-        \ and headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     delete:
       consumes:
       - "application/json"
+      produces:
+      - "application/json"
       parameters:
       - name: "identityname"
         in: "query"
         required: true
         type: "string"
-      responses: {}
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - sigv4: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
         responses:
           default:
             statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{\n\"statusCode\": 200\n}"
+        requestTemplates:
+          application/json: "{\n\"statusCode\": 200,\n\"user_id\": {\"S\": \"$input.path('$.user_id')\"\
+            \ }\n\"identities\": {\"S\": \"$input.path('$.identities')\" }\n}"
+        passthroughBehavior: "when_no_templates"
+        type: "mock"
+    options:
+      consumes:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
         requestTemplates:
           application/json: "{\"statusCode\": 200}"
         passthroughBehavior: "when_no_match"
         type: "mock"
+  /identities/upload:
+    post:
+      parameters:
+      - name: "tag"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "filename"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "name"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:UploadFrame/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+  /logs:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
   /preferences:
     get:
-      consumes:
-      - "application/json"
-      responses: {}
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Credentials:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
         responses:
           default:
             statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
         passthroughBehavior: "when_no_match"
-        type: "mock"
-    post:
-      consumes:
-      - "application/json"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-    put:
-      consumes:
-      - "application/json"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
-        \ and headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     delete:
       consumes:
       - "application/json"
-      responses: {}
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - sigv4: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
         responses:
           default:
             statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{\n\"statusCode\":200\n}"
         requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
+          application/json: "{\n\"statusCode\": 200,\n\"user_id\" : { \"S\": \"$input.path('user_id')\"\
+            }\n\"preferences\" : { \"S\": \"$input.path('preferences')\"      }\n}"
+        passthroughBehavior: "when_no_templates"
         type: "mock"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+  /preferences/notifications:
+    post:
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses: {}
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+  /preferences/securitylevel:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
   /sites:
     get:
+      parameters:
+      - name: "site_id"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      parameters:
+      - name: "site_id"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    delete:
       consumes:
       - "application/json"
       produces:
@@ -452,122 +706,22 @@ paths:
         200:
           description: "200 response"
       security:
-      - Cognito_Auth: []
+      - sigv4: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/Query"
         responses:
           default:
             statusCode: "200"
             responseTemplates:
-              application/json: "#set($inputRoot = $input.path('$'))\n{\n\t\"status\"\
-                : \"OK\",\n\t\"data\": [\n\t\t#foreach($item in $inputRoot.Items)\n\
-                \t\t\n\t\t    #foreach($siteId in $item.control_panel.M.keySet())\n\
-                \t\t    #set($site = $item.control_panel.M.get($siteId))\n       \
-                \         {\n                    \"site_id\": \"$siteId\",\n     \
-                \               \"physical_address\": \"$site.M.physical_address.S\"\
-                ,\n                    \"broadcast_ip\": \"$site.M.broadcast_ip.S\"\
-                \n                }\n            #if($foreach.hasNext),#end\n\t\t\
-                \    #end\n\t\t#if($foreach.hasNext),#end\n\t\t#end\n\t]\n}"
+              application/json: "{\n\"statusCode\": 200\n}"
         requestTemplates:
-          application/json: "{\n    \"TableName\": \"UserData\",\n    \"KeyConditionExpression\"\
-            : \"user_id = :v1\",\n    \"ExpressionAttributeValues\": {\n        \"\
-            :v1\": {\"S\": \"$input.params('user_id')\"}\n    },\n    \"ProjectionExpression\"\
-            : \"control_panel\"\n}"
+          application/json: "{\"statusCode\": 200,\n\"user_id\": { \"S\": \"$input.path('user_id')\"\
+            \      },\n\"site_id\" : { \"S\" : \"$input.path('site_id')\" } \n}\n"
         passthroughBehavior: "when_no_templates"
-        httpMethod: "POST"
-        type: "aws"
-    post:
-      consumes:
-      - "application/json"
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
-      x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/PutItem"
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"TableName\"\
-            : \"UserData\",\n    \"Key\": {\n        \"user_id\": {\"S\": \"$inputRoot.user_id\"\
-            }\n    },\n    \"ExpressionAttributeValues\": {\n        \":site_id\"\
-            : {\"S\": \"$inputRoot.site_id\"},\n        \":physical_address\": {\"\
-            S\": \"$inputRoot.physical_address\"},\n        \":broadcast_ip\": {\"\
-            S\": \"$inputRoot.broadcast_ip\"},\n        \":cameras\": {\n        \
-            \    \"L\": [\n                \"M\": {\n                \t #foreach($cameraId\
-            \ in $inputRoot.cameras.keySet())\n                \t #\n            \t\
-            \t\"$cameraId\": {\n            \t\t\t\"M\": {\n            \t\t\t\t\"\
-            name\": {\n            \t\t\t\t\t\"S\": \"string\"\n            \t\t\t\
-            \t},\n            \t\t\t\t\"ip_address\": {\n            \t\t\t\t\t\"\
-            M\": {\n            \t\t\t\t\t\t\"path\": {\n            \t\t\t\t\t\t\t\
-            \"S\": \"qwe\"\n            \t\t\t\t\t\t},\n            \t\t\t\t\t\t\"\
-            address\": {\n            \t\t\t\t\t\t\t\"S\": \"asdf\"\n            \t\
-            \t\t\t\t\t},\n            \t\t\t\t\t\t\"protocal\": {\n            \t\t\
-            \t\t\t\t\t\"S\": \"hello moyo 2\"\n            \t\t\t\t\t\t},\n      \
-            \      \t\t\t\t\t\t\"port\": {\n            \t\t\t\t\t\t\t\"S\": \"xcvz\"\
-            \n            \t\t\t\t\t\t}\n            \t\t\t\t\t}\n            \t\t\
-            \t\t}\n            \t\t\t}\n            \t\t}\n            \t\t#if($foreach.hasNext),#end\n\
-            \                    #end\n                }\n                \n     \
-            \       ]\n        }\n        \n    },\n    \"UpdateExpression\": \"\"\
-            \n}"
-        passthroughBehavior: "when_no_templates"
-        httpMethod: "POST"
-        type: "aws"
-    put:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "site_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
-        \ and headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
-        type: "mock"
-    delete:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "site_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses: {}
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate query string parameters and\
-        \ headers"
-      x-amazon-apigateway-integration:
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "{\"statusCode\": 200}"
-        passthroughBehavior: "when_no_match"
         type: "mock"
   /storage:
     get:
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
       parameters:
       - name: "camera_id"
         in: "query"
@@ -576,56 +730,35 @@ paths:
       responses:
         200:
           description: "200 response"
-      security:
-      - Cognito_Auth: []
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/Query"
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
         responses:
           default:
             statusCode: "200"
-            responseTemplates:
-              application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"status\"\
-                : \"OK\",\n    \"data\": {\n        \"artefact\": [\n            #foreach($item\
-                \ in $inputRoot.Items)\n            {\n            \t\"camera_id\"\
-                : \"$item.camera_id.S\",\n            \t\"videos\": [\n          \
-                \  \t    #foreach($video in $item.videos.L)\n            \t\t{\n \
-                \           \t\t\t\"aid\": \"$video.M.aid.S\",\n            \t\t\t\
-                \"path_in_s3\": \"$video.M.path_in_s3.S\",\n            \t\t\t\"metadata\"\
-                : {\n            \t\t\t    #foreach($tag in $video.M.metadata.M.keySet())\n\
-                \            \t\t\t    #set($data = $video.M.metadata.M.get($tag))\n\
-                \            \t\t\t    \"$tag\": \"$data.S\"\n            \t\t\t \
-                \   #if($foreach.hasNext),#end\n            \t\t\t    #end\n     \
-                \       \t\t\t}\n            \t\t}\n            \t\t#if($foreach.hasNext),#end\n\
-                \            \t\t#end\n            \t],\n            \t\"frames\"\
-                : [\n            \t    #foreach($frame in $item.frames.L)\n      \
-                \      \t\t{\n            \t\t\t\"aid\": \"$frame.M.aid.S\",\n   \
-                \         \t\t\t\"path_in_s3\": \"$frame.M.path_in_s3.S\",\n     \
-                \       \t\t\t\"metadata\": {\n            \t\t\t    #foreach($tag\
-                \ in $frame.M.metadata.M.keySet())\n            \t\t\t    #set($data\
-                \ = $frame.M.metadata.M.get($tag))\n            \t\t\t    \"$tag\"\
-                : \"$data.S\"\n            \t\t\t    #if($foreach.hasNext),#end\n\
-                \            \t\t\t    #end\n            \t\t\t}\n            \t\t\
-                }\n            \t\t#if($foreach.hasNext),#end\n            \t\t#end\n\
-                \            \t]\n            \t\n            }\n            #if($foreach.hasNext),#end\n\
-                \            #end\n        ]\n    }\n}\n\n\n"
-        requestTemplates:
-          application/json: "{\n    \"TableName\": \"Artefacts\",\n    \"KeyConditionExpression\"\
-            : \"camera_id = :v1\",\n    \"ExpressionAttributeValues\": {\n       \
-            \ \":v1\": {\"S\": \"$input.params('camera_id')\"}\n    }\n}"
-        passthroughBehavior: "when_no_templates"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        type: "aws"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
     post:
       consumes:
+      - "application/json"
+      produces:
       - "application/json"
       responses:
         200:
           description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - sigv4: []
       x-amazon-apigateway-request-validator: "Validate body"
       x-amazon-apigateway-integration:
         credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
@@ -633,6 +766,10 @@ paths:
         responses:
           default:
             statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{ \n\"statusCode\":200\n\n}"
         requestTemplates:
           application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"TableName\"\
             : \"Artefacts\",\n    \"Item\": {\n        \"camera_id\": {\"S\": \"$inputRoot.camera_id\"\
@@ -666,32 +803,85 @@ paths:
     delete:
       consumes:
       - "application/json"
+      produces:
+      - "application/json"
       parameters:
       - name: "camera_id"
         in: "query"
         required: true
         type: "string"
-      responses: {}
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - sigv4: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
         responses:
           default:
             statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{\n\"statusCode\":200\n}"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200,\n\"camera_id\" : { \"S\" : \"$input.path('camera_id')\"\
+            \ }\n}"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+    options:
+      consumes:
+      - "application/json"
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
         requestTemplates:
           application/json: "{\"statusCode\": 200}"
         passthroughBehavior: "when_no_match"
         type: "mock"
   /storage/upload:
     post:
-      produces:
-      - "application/json"
+      parameters:
+      - name: "user_id"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "file_name"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "tag"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "camera_id"
+        in: "query"
+        required: true
+        type: "string"
       responses:
         200:
           description: "200 response"
-      x-amazon-apigateway-request-validator: "Validate body"
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
       x-amazon-apigateway-integration:
         uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:UploadClip/invocations"
         responses:
@@ -703,251 +893,260 @@ paths:
         type: "aws_proxy"
   /storage/video:
     get:
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "camera_id"
-        in: "query"
-        required: true
-        type: "string"
       responses:
         200:
           description: "200 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Heaaders:
+              type: "string"
+        500:
+          description: "500 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
       security:
-      - Cognito_Auth: []
+      - WatchdogAuthoriser: []
       x-amazon-apigateway-request-validator: "Validate query string parameters and\
         \ headers"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/Query"
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
         responses:
           default:
             statusCode: "200"
-            responseTemplates:
-              application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"status\"\
-                : \"OK\",\n    \"data\": {\n         #foreach($item in $inputRoot.Items)\n\
-                \        \"$item.camera_id.S\": [\n           \n            {\n  \
-                \          \t\"videos\": [\n            \t    #foreach($video in $item.videos.L)\n\
-                \            \t\t{\n            \t\t\t\"aid\": \"$video.M.aid.S\"\
-                ,\n            \t\t\t\"path_in_s3\": \"$video.M.path_in_s3.S\",\n\
-                \            \t\t\t\"metadata\": {\n            \t\t\t    #foreach($tag\
-                \ in $video.M.metadata.M.keySet())\n            \t\t\t    #set($data\
-                \ = $video.M.metadata.M.get($tag))\n            \t\t\t    \"$tag\"\
-                : \"$data.S\"\n            \t\t\t    #if($foreach.hasNext),#end\n\
-                \            \t\t\t    #end\n            \t\t\t}\n            \t\t\
-                }\n            \t\t#if($foreach.hasNext),#end\n            \t\t#end\n\
-                \            \t]\n            \t\n            }\n        ]\n     \
-                \   #if($foreach.hasNext),#end\n        #end\n    }\n}"
-        requestTemplates:
-          application/json: "{\n    \"TableName\": \"Artefacts\",\n    \"KeyConditionExpression\"\
-            : \"camera_id = :v1\",\n    \"ExpressionAttributeValues\": {\n       \
-            \ \":v1\": {\"S\": \"$input.params('camera_id')\"}\n    },\n    \"ProjectionExpression\"\
-            : \"videos, camera_id\"\n}"
-        passthroughBehavior: "when_no_templates"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        type: "aws"
-  /user:
-    get:
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "user_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate query string parameters and\
-        \ headers"
-      x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/Query"
-        responses:
-          2\d{2}:
-            statusCode: "200"
-            responseTemplates:
-              application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"status\"\
-                : \"OK\",\n    \"data\": {\n        \"users\": [\n            #foreach($item\
-                \ in $inputRoot.Items)\n              {\n            \t\"user_id\"\
-                : \"$item.user_id.S\",\n            \t\"email\": \"$item.email.S\"\
-                ,\n            \t\"phone\": \"$item.phone.S\",\n            \t\"name\"\
-                : \"$item.name.S\",\n            \t\"identities\": {\n           \
-                \ \t    \"intruder\": [\n            \t        #foreach($intruder\
-                \ in $item.identities.M.intruder.L)\n            \t        \"$intruder.S\"\
-                \n            \t        #if($foreach.hasNext),#end\n            \t\
-                \        #end\n            \t    ],\n            \t    \"training\"\
-                : [\n            \t        #foreach($training in $item.identities.M.training.L)\n\
-                \            \t        \"$training.S\"\n            \t        #if($foreach.hasNext),#end\n\
-                \            \t        #end\n            \t    ]\n            \t},\n\
-                \            \t\"preferences\": {\n            \t    \"historical\"\
-                : {\n            \t        \"clip_length\": \"$item.preferences.M.historical.M.clip_length.N\"\
-                ,\n            \t        \"clip_interval\": \"$item.preferences.M.historical.M.clip_interval.N\"\
-                \n            \t    },\n            \t    \"sns\": {\n           \
-                \ \t        \"type\": \"$item.preferences.M.sns.M.type.S\",\n    \
-                \        \t        \"security_company\": \"$item.preferences.M.sns.M.security_company.S\"\
-                ,\n            \t        \"value\": \"$item.preferences.M.sns.M.value.S\"\
-                \n            \t    }\n            \t},\n            \t\"control_panel\"\
-                : {\n            \t    #foreach($siteId in $item.control_panel.M.keySet())\n\
-                \            \t    #set($site = $item.control_panel.M.get($siteId))\n\
-                \            \t    \"$siteId\": {\n            \t        \"physical_adress\"\
-                : \"$site.M.physical_address.S\",\n            \t        \"broadcast_ip\"\
-                : \"$site.M.broadcast_ip.S\",\n            \t        \"cameras\":\
-                \ {\n            \t            #foreach($cameraId in $site.M.cameras.M.keySet())\n\
-                \            \t            #set($camera = $site.M.cameras.M.get($cameraId))\n\
-                \            \t            \"$cameraId\": {\n            \t      \
-                \          \"name\": \"$camera.M.name.S\",\n            \t       \
-                \         \"ip_address\": {\n            \t                    \"\
-                protocal\": \"$camera.M.ip_address.M.protocal.S\",\n            \t\
-                \                    \"path\": \"$camera.M.ip_address.M.path.S\",\n\
-                \            \t                    \"address\": \"$camera.M.ip_address.M.address.S\"\
-                ,\n            \t                    \"port\": \"$camera.M.ip_address.M.port.S\"\
-                \n            \t               }\n            \t            }\n  \
-                \          \t            #if($foreach.hasNext),#end\n            \t\
-                \            #end\n            \t        }\n            \t    }\n\
-                \            \t    #if($foreach.hasNext),#end\n            \t    #end\n\
-                \            \t}\n            }\n             #if($foreach.hasNext),#end\n\
-                \              #end\n        ]\n    }\n}\n"
-        requestTemplates:
-          application/json: "{\n    \"TableName\": \"UserData\",\n    \"KeyConditionExpression\"\
-            : \"user_id = :v1\",\n    \"ExpressionAttributeValues\": {\n        \"\
-            :v1\": {\"S\": \"$input.params('user_id')\"}\n    }\n}"
-        passthroughBehavior: "when_no_templates"
-        httpMethod: "POST"
-        type: "aws"
-    post:
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
       consumes:
       - "application/json"
       responses:
         200:
           description: "200 response"
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body"
-      x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/PutItem"
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"TableName\"\
-            : \"UserData\",\n    \"Item\": {\n          \"user_id\" : {\"S\": \"$inputRoot.user_id\"\
-            },\n          \"name\" : {\"S\": \"$inputRoot.name\"},\n          \"email\"\
-            \ : {\"S\": \"$inputRoot.email\"},\n          \"phone\" : {\"S\": \"$inputRoot.phone\"\
-            },\n          \n\t       \"identities\" : {\n\t            \"M\": {\n\t\
-            \                \"training\": {\n                        \"L\": [\n \
-            \                           #foreach($training in $inputRoot.identities.training)\n\
-            \                            {\n                                \"S\"\
-            : \"$training\"\n                            }\n                     \
-            \       #if($foreach.hasNext),#end\n                            #end\n\
-            \                        ]\n                        \n               \
-            \     },\n                    \"intruder\": {\n                      \
-            \  \"L\": [\n                            #foreach($intruder in $inputRoot.identities.intruder)\n\
-            \                            {\n                                \"S\"\
-            : \"$intruder\"\n                            }\n                     \
-            \       #if($foreach.hasNext),#end\n                            #end\n\
-            \                        ]\n                        \n               \
-            \     }\n\t            }\n                \n          },\n          \"\
-            preferences\" : {\n                \"M\": {\n                    \"historical\"\
-            \ : {\n                        \"M\": {\n                          \"\
-            clip_length\" : {\"N\": \"$inputRoot.preferences.historical.clip_length\"\
-            },\n                          \"clip_interval\" : {\"N\": \"$inputRoot.preferences.historical.clip_interval\"\
-            }\n                        }\n                    },\n               \
-            \     \"sns\" : {\n                        \"M\": {\n                \
-            \          \"type\" : {\"S\": \"$inputRoot.preferences.sns.type\"},\n\
-            \                          \"security_company\" : {\"S\": \"$inputRoot.preferences.sns.security_company\"\
-            },\n                          \"value\" : {\"S\": \"$inputRoot.preferences.sns.value\"\
-            }\n                        }\n                    }\n                }\n\
-            \          },\n\n          \"control_panel\": {\n                \"M\"\
-            : {\n                    #foreach($siteId in $inputRoot.control_panel.keySet())\n\
-            \                    #set($site = $inputRoot.control_panel.get($siteId))\n\
-            \                    \"$siteId\": {\n                        \"M\": {\n\
-            \                            \"physical_address\": {\"S\": \"$site.physical_address\"\
-            },\n                            \"broadcast_ip\": {\"S\": \"$site.broadcast_ip\"\
-            },\n                            \"cameras\": {\n                     \
-            \           \"M\": {\n                                    #foreach($cameraId\
-            \ in $site.cameras.keySet())\n                                    #set($camera\
-            \ = $site.cameras.get($cameraId))\n                                  \
-            \  \"$cameraId\": {\"M\": {\n                                        \
-            \    \"name\": {\"S\": \"$camera.name\"},\n                          \
-            \                  \"ip_address\": {\"M\": {\n                       \
-            \                         \"protocal\": {\"S\": \"$camera.ip_address.protocal\"\
-            },\n                                                \"address\": {\"S\"\
-            : \"$camera.ip_address.address\"},\n                                 \
-            \               \"port\": {\"S\": \"$camera.ip_address.port\"},\n    \
-            \                                            \"path\": {\"S\": \"$camera.ip_address.path\"\
-            }\n                                            }}\n                  \
-            \                  }}\n                                    #if($foreach.hasNext),#end\n\
-            \                                    #end\n                          \
-            \      }\n                            }\n                        }\n \
-            \                   }\n                    #if($foreach.hasNext),#end\n\
-            \                    #end\n                }\n            }\n    }\n \
-            \         \n}"
-        passthroughBehavior: "when_no_templates"
-        httpMethod: "POST"
-        type: "aws"
-    put:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "user_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
-        \ and headers"
-      x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::878292117449:role/APIGatewayRole"
-        uri: "arn:aws:apigateway:af-south-1:dynamodb:action/UpdateItem"
-        responses:
-          default:
-            statusCode: "200"
-        requestTemplates:
-          application/json: "#set($inputRoot = $input.path('$'))\n{\n    \"TableName\"\
-            : \"UserData\",\n    \"Item\": {\n          \"user_id\" : {\"S\": \"$inputRoot.user_id\"\
-            },\n          \"name\" : {\"S\": \"$inputRoot.name\"},\n          \"email\"\
-            \ : {\"S\": \"$inputRoot.email\"},\n          \"phone\" : {\"S\": \"$inputRoot.phone\"\
-            }\n\n          \n    }\n          \n}"
-        passthroughBehavior: "when_no_templates"
-        httpMethod: "POST"
-        type: "aws"
-    delete:
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "user_id"
-        in: "query"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "200 response"
-      security:
-      - Cognito_Auth: []
-      x-amazon-apigateway-request-validator: "Validate query string parameters and\
-        \ headers"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
       x-amazon-apigateway-integration:
         responses:
           default:
             statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Expose-Headers: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
         requestTemplates:
           application/json: "{\"statusCode\": 200}"
         passthroughBehavior: "when_no_match"
         type: "mock"
+  /ui:
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+  /ui/recordings:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoUIGets/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    options:
+      responses:
+        200:
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Credentials:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+        500:
+          description: "500 response"
+          headers:
+            Access-Control-Expose-Headers:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Headers:
+              type: "string"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:APIGatewayPreflights/invocations"
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+  /user:
+    get:
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoFetcher/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    post:
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - WatchdogAuthoriser: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        uri: "arn:aws:apigateway:af-south-1:lambda:path/2015-03-31/functions/arn:aws:lambda:af-south-1:878292117449:function:DynamoPost/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    delete:
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "user_id"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 response"
+      security:
+      - sigv4: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseTemplates:
+              application/json: "{\n\"statusCode\":200\n}"
+        requestTemplates:
+          application/json: "{\"statusCode\": 200,\n\"user_id\" : { \"S\": \"$input.path('user_id')\"\
+            \          }\n}"
+        passthroughBehavior: "when_no_templates"
+        type: "mock"
 securityDefinitions:
-  Cognito_Auth:
+  WatchdogAuthoriser:
     type: "apiKey"
     name: "Authorization"
     in: "header"
@@ -961,12 +1160,35 @@ securityDefinitions:
     name: "Authorization"
     in: "header"
     x-amazon-apigateway-authtype: "awsSigv4"
+x-amazon-apigateway-gateway-responses:
+  DEFAULT_4XX:
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Methods: "'DELETE,GET,OPTIONS,POST'"
+      gatewayresponse.header.Access-Control-Expose-Headers: "'*'"
+      gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+  DEFAULT_5XX:
+    responseParameters:
+      gatewayresponse.header.Access-Control-Allow-Methods: "'DELETE,GET,OPTIONS,POST'"
+      gatewayresponse.header.Access-Control-Expose-Headers: "'*'"
+      gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+x-amazon-apigateway-policy:
+  Version: "2012-10-17"
+  Statement:
+  - Effect: "Allow"
+    Principal:
+      AWS: "*"
+    Action: "execute-api:Invoke"
+    Resource: "arn:aws:execute-api:af-south-1:878292117449:b534kvo5c6/testing/*"
+  - Effect: "Allow"
+    Principal:
+      AWS: "*"
+    Action: "execute-api:Invoke"
+    Resource: "arn:aws:execute-api:af-south-1:878292117449:b534kvo5c6/beta/*"
 x-amazon-apigateway-request-validators:
   Validate body:
     validateRequestParameters: false
-    validateRequestBody: true
-  Validate body, query string parameters, and headers:
-    validateRequestParameters: true
     validateRequestBody: true
   Validate query string parameters and headers:
     validateRequestParameters: true
