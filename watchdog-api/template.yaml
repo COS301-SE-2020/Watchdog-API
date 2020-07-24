@@ -1,0 +1,396 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Watchdog API
+
+  The interface for the Watchdog Database for communication between Front and Back end
+
+Resources:
+  WatchdogApi:
+    Type: 'AWS::Serverless::Api'
+    DeletionPolicy: Retain
+    Properties:
+        StageName: testing
+        DefinitionUri: ./swagger.yaml
+  UserDataTable:
+    Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
+    Properties:
+      TableName: UserData
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  ArtefactsTable:
+    Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
+    Properties:
+      TableName: Artefacts
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  DynamoFetcher:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: './lambdas/DynamoFetcher'
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      Role: 'arn:aws:iam::878292117449:role/service-role/DynamoFetcher-role-r7orfnwr'
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /storage
+            Method: GET
+        Api2:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: GET
+        Api3:
+          Type: Api
+          Properties:
+            Path: /controlpanel
+            Method: GET
+        Api4:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api5:
+          Type: Api
+          Properties:
+            Path: /preferences/securitylevel
+            Method: GET
+        Api6:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api7:
+          Type: Api
+          Properties:
+            Path: /detectintruder
+            Method: GET
+        Api8:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api9:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api10:
+          Type: Api
+          Properties:
+            Path: /preferences
+            Method: GET
+        Api11:
+          Type: Api
+          Properties:
+            Path: /storage/video
+            Method: GET
+        Api12:
+          Type: Api
+          Properties:
+            Path: /sites
+            Method: GET
+        Api13:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api14:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api15:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api16:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api17:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api18:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api19:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api20:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api21:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api22:
+          Type: Api
+          Properties:
+            Path: /identities
+            Method: GET
+        Api23:
+          Type: Api
+          Properties:
+            Path: /logs
+            Method: GET
+        Api24:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api25:
+          Type: Api
+          Properties:
+            Path: /cameras
+            Method: GET
+  DynamoPost:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: ./lambdas/DynamoPost/lambda_function.py
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      Role: 'arn:aws:iam::878292117449:role/service-role/DynamoPost-role-wwe6jysg'
+      Events:
+        Api1:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api2:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api3:
+          Type: Api
+          Properties:
+            Path: /sites
+            Method: POST
+        Api4:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api5:
+          Type: Api
+          Properties:
+            Path: /controlpanel
+            Method: POST
+        Api6:
+          Type: Api
+          Properties:
+            Path: /logs
+            Method: POST
+        Api7:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: POST
+        Api8:
+          Type: Api
+          Properties:
+            Path: /identities
+            Method: POST
+        Api9:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api10:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api11:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api12:
+          Type: Api
+          Properties:
+            Path: /preferences/securitylevel
+            Method: POST
+        Api13:
+          Type: Api
+          Properties:
+            Path: /preferences/notifications
+            Method: POST
+        Api14:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api15:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api16:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api17:
+          Type: Api
+          Properties:
+            Path: /MyResource
+            Method: ANY
+        Api18:
+          Type: Api
+          Properties:
+            Path: /cameras
+            Method: POST
+        Api19:
+          Type: Api
+          Properties:
+            Path: /preferences
+            Method: POST
+  DynamoUIGetsLambda:
+    Type: 'AWS::Serverless::Lambda'
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:  DynamoUIGets
+      Handler: lambda_function.lambda_handler
+      Role: 'arn:aws:iam::878292117449:role/service-role/DynamoUIGets-role-prkzo0i1'
+      Runtime: python3.8
+      CodeUri:
+        Bucket: watchdog-api-deployment-workspace
+        Key: DynamoUIGets.zip
+      Events:
+        WatchdogApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "WatchdogApi"
+            Path: /pet
+            Method: POST
+  UploadClipLambda:
+    Type: 'AWS::Serverless::Lambda'
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:  UploadClip
+      Handler: lambda_function.lambda_handler
+      Role: 'arn:aws:iam::878292117449:role/service-role/UploadClip-role-gwfg59rs'
+      Runtime: python3.8
+      CodeUri:
+        Bucket: watchdog-api-deployment-workspace
+        Key: UploadClip.zip
+      Events:
+        WatchdogApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "WatchdogApi"
+            Path: /pet
+            Method: POST
+  UploadFrameLambda:
+    Type: 'AWS::Serverless::Lambda'
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:  UploadFrame
+      Handler: lambda_function.lambda_handler
+      Role: 'arn:aws:iam::878292117449:role/service-role/UploadFrame-role-o0502rbs'
+      Runtime: python3.8
+      CodeUri:
+        Bucket: watchdog-api-deployment-workspace
+        Key: UploadFrame.zip
+      Events:
+        WatchdogApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "WatchdogApi"
+            Path: /pet
+            Method: POST
+  AddVideoToArtefactsLambda:
+    Type: 'AWS::Serverless::Lambda'
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:  AddVideoToArtefacts
+      Handler: lambda_function.lambda_handler
+      Role: 'arn:aws:iam::878292117449:role/AddVideoToArtefactsV2'
+      Runtime: python3.8
+      CodeUri:
+        Bucket: watchdog-api-deployment-workspace
+        Key: AddVideoToArtefacts.zip
+      Events:
+        WatchdogApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "WatchdogApi"
+            Path: /pet
+            Method: POST
+  ExpiredVideoGarbageLambda:
+    Type: 'AWS::Serverless::Lambda'
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:  ExpiredVideoGarbage
+      Handler: lambda_function.lambda_handler
+      Role: 'arn:aws:iam::878292117449:role/service-role/S3VideotoLambda'
+      Runtime: python3.8
+      CodeUri:
+        Bucket: watchdog-api-deployment-workspace
+        Key: ExpiredVideoGarbage.zip
+      Events:
+        WatchdogApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "WatchdogApi"
+            Path: /pet
+            Method: POST
+  APIGatewayPreflightsLambda:
+    Type: 'AWS::Serverless::Lambda'
+    DeletionPolicy: Retain
+    Properties:
+      FunctionName:  APIGatewayPreflights
+      Handler: index.handler
+      Role: >-
+        arn:aws:iam::878292117449:role/service-role/APIGatewayPreflights-role-okia22mx
+      Runtime: nodejs12.x
+      CodeUri:
+        Bucket: watchdog-api-deployment-workspace
+        Key: APIGatewayPreflights.zip
+      Events:
+        WatchdogApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "WatchdogApi"
+            Path: /pet
+            Method: POST
+  VideoContentBucket:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain

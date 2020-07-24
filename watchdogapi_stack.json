@@ -1,0 +1,164 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Import test",
+	"Resources": {
+		"WatchdogApi": {
+			"Type": "AWS::ApiGateway::RestApi",
+			"DeletionPolicy": "Retain"
+		},
+		"UserDataTable": {
+			"Type": "AWS::DynamoDB::Table",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"TableName": "UserData",
+				"KeySchema": [
+					{
+						"AttributeName": "user_id",
+						"KeyType": "HASH"
+					}
+				],
+				"AttributeDefinitions": [
+					{
+						"AttributeName": "user_id",
+						"AttributeType": "S"
+					}
+				],
+				"ProvisionedThroughput": {
+					"ReadCapacityUnits": 5,
+					"WriteCapacityUnits": 5
+				}
+			}
+		},
+		"ArtefactsTable": {
+			"Type": "AWS::DynamoDB::Table",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"TableName": "Artefacts",
+				"KeySchema": [
+					{
+						"AttributeName": "user_id",
+						"KeyType": "HASH"
+					}
+				],
+				"AttributeDefinitions": [
+					{
+						"AttributeName": "user_id",
+						"AttributeType": "S"
+					}
+				],
+				"ProvisionedThroughput": {
+					"ReadCapacityUnits": 5,
+					"WriteCapacityUnits": 5
+				}
+			}
+		},
+		"DynamoFetcherLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/DynamoFetcher-role-r7orfnwr",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "DynamoFetcher.zip"
+				}
+			}
+		},
+		"DynamoPostLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/DynamoPost-role-wwe6jysg",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "DynamoPost.zip"
+				}
+			}
+		},
+		"DynamoUIGetsLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/DynamoUIGets-role-prkzo0i1",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "DynamoUIGets.zip"
+				}
+			}
+		},
+		"UploadClipLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/UploadClip-role-gwfg59rs",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "UploadClip.zip"
+				}
+			}
+		},
+		"UploadFrameLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/UploadFrame-role-o0502rbs",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "UploadFrame.zip"
+				}
+			}
+		},
+		"AddVideoToArtefactsLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/AddVideoToArtefactsV2",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "AddVideoToArtefacts.zip"
+				}
+			}
+		},
+		"ExpiredVideoGarbageLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "lambda_function.lambda_handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/S3VideotoLambda",
+				"Runtime": "python3.8",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "ExpiredVideoGarbage.zip"
+				}
+			}
+		},
+		"APIGatewayPreflightsLambda": {
+			"Type": "AWS::Lambda::Function",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"Handler": "index.handler",
+				"Role": "arn:aws:iam::878292117449:role/service-role/APIGatewayPreflights-role-okia22mx",
+				"Runtime": "nodejs12.x",
+				"Code": {
+					"S3Bucket": "watchdog-api-deployment-workspace",
+					"S3Key": "APIGatewayPreflights.zip"
+				}
+			}
+		},
+		"VideoContentBucket": {
+			"Type": "AWS::S3::Bucket",
+			"DeletionPolicy": "Retain"
+		}
+	}
+}
