@@ -86,30 +86,48 @@ def lambda_handler(event, context):
             
             # if responses[0]:
             
+            #for i, identity in enumerate(responses[1]['identities']['whitelist']):
+                #identity["index"] = i
+                #responses[1]['identities']['whitelist'] = identity
+            
+            # Putting room into camera object
+            # {site: {location: {camera: {}}}}
+            # {site: {"cameras": {camera: {room: ""}}}}
+            # reformed_data = {}
             cameras = {}
             for site in responses[1]['control_panel']:
-                for camera in responses[1]['control_panel'][site]["cameras"]:
-                    cameras[camera] = {}
-                    cameras[camera]['room'] = responses[1]['control_panel'][site]["cameras"][camera]['room']
-                    
+                cameras[site] = {"cameras": {}}
+                for location in responses[1]['control_panel'][site]:
+                    if location != 'metadata':
+                        cameras["cameras"] = {**cameras, **responses[1]['control_panel'][site][location]}
+                        for camera in cameras["cameras"]:
+                            cameras["cameras"][camera]["location"] = location
+                        # for cameras in responses[1]['control_panel'][site][location]:
+                            # camera = {}
+                           #print(json.dumps(camera))
+                        #   camera['room'] = responses[1]['control_panel'][site][location]
+                            # TODO: Let Abu know to change room to location
+                            # camera['location'] = location
+                            # cameras['camera'] = camera
+                  
             # responses = get_data(requests[0], user_id)
             data = {"videos": responses[0]["videos"]}
             
             for i, video in enumerate(data["videos"]):
                 video["path_in_s3"] = generate_presigned_link(video["path_in_s3"])
             
-            print(cameras)
+            pprint(cameras)
             pprint(data)
             
             for i, video in enumerate(responses[0]["videos"]):
                 print(video)
                 try:
-                    data["videos"][i]["metadata"]["room"] = cameras[video['metadata']['camera_id']]['room']
+                    data["videos"][i]["metadata"]["location"] = cameras[video['metadata']['camera_id']]['location']
                 except Exception as e:
                     print(e)
             resp = success(f'Operation Successfull for "{route}"', extra=data)
         else:
-            resp = {"status": "UNIMPLEMENTED", "message": f'The route "{route}" is not implemented yet. Tell Rishi to get off his arse and implement it'} 
+            resp = {"status": "UNIMPLEMENTED", "message": f'The route "{route}" is not implemented yet. Tell Armin to get off his arse and implement it'} 
     except Exception as e:
         traceback.print_exc()
         resp = error(f'An unexpected error has occured: {e}', extra={"data": event})
