@@ -4,6 +4,7 @@ import os
 
 
 def get_meta_data_from_event(event):
+    #fetching the metadata from the S3 bucket using the boto client
     s3 = boto3.client('s3')
     bucket = os.environ['BUCKET']
     
@@ -47,7 +48,7 @@ def add_video_to_user_data(event):
 
 
 def lambda_handler(event, context):
-    
+    #invoke the function to add the given video the Artefacts table and correspond with UserData in
     add_video_to_user_data(event)
     print("(2. Add video record for user given the metadata)")
     
