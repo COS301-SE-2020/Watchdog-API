@@ -17,7 +17,7 @@ def from_dynamodb_to_json(item):
     return {k: d.deserialize(value=v) for k, v in item.items()}
 
 def fetch_from_dynamo(user_id, projectionExpression=None, tableName='UserData'):
-    # Get the service resource.
+    # Get the service resource using boto3 and dynamodb implementations.
     client = boto3.client('dynamodb', region_name='af-south-1')
     
     if projectionExpression is None:
@@ -44,6 +44,7 @@ def fetch_from_dynamo(user_id, projectionExpression=None, tableName='UserData'):
     
     
 def generate_presigned_link(key):
+    #generating a presigned link for S3 bucket 
     try:
         response = s3_client.generate_presigned_url(
             'get_object',
@@ -84,6 +85,7 @@ def lambda_handler(event, context):
         }
     
     try:
+        # The try block where different routes facilitate different get requests and different info fetched from dynamodb tables
         if '/user' in route:
             data = fetch_from_dynamo(user_id)
             resp = success(f'Dynamo GetItem Completed for {route}', extra=data)
@@ -93,6 +95,8 @@ def lambda_handler(event, context):
             
             # Manip data to add presigned link:
             for x, identity in enumerate(data['identities']['whitelist']):
+                # Add index for identities (whitelist) to enable delete
+                data['identities']['whitelist'][x]['index'] = x
                 link = data['identities']['whitelist'][x]['key']
                 data['identities']['whitelist'][x]['path_in_s3'] = generate_presigned_link(link)
                 
