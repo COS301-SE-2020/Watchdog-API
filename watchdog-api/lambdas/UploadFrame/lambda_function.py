@@ -24,6 +24,7 @@ def success(msg, extra={}):
 
 def lambda_handler(event, context):
     # tag = event['queryStringParameters']['tag']
+    #uploading of frame and fetching the corresponding user data from event object
     user_id = event['requestContext']['authorizer']['claims']['sub']
     name = event['queryStringParameters']['name']
     timestamp = str(datetime.datetime.now().timestamp())
@@ -51,6 +52,7 @@ def lambda_handler(event, context):
     resp = {}
     print(key)
     try:
+        #generating a presigned link for S3 bucket
         s3 = boto3.client('s3', region_name='eu-west-1')
         resp = s3.generate_presigned_post(
             Bucket='intruder.analysis',
