@@ -17,6 +17,7 @@ def get_location_from_tag(tag):
         return None, None, None
     
 def get_presigned_link(bucket, directory, region, event):
+    #generating a presigned link for the S3 bucket with appropriate AWS roles and policies
     tag = event['queryStringParameters']['tag']
     file_name = event['queryStringParameters']['file_name']
     uuid = event['queryStringParameters']['user_id']
@@ -73,7 +74,7 @@ def lambda_handler(event, context):
         response = get_presigned_link(bucket, directory, region, event)
         print("3. url link:"+str(response['url'])+"  fields:"+str(response['fields']))
     
-    # Package Response
+    # Package Response, provided in JSON format for API Gateway
     respObj = {
         "statusCode": 200,
         "headers": {
