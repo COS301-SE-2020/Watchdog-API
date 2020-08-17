@@ -4,7 +4,7 @@ import base64
 import os
 from boto3.dynamodb.conditions import Key
 import requests
-import datetime
+from datetime import datetime, timedelta
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 
 
@@ -24,10 +24,10 @@ def is_human(photo, bucket, rekognition):
     # check to see if human is identified and has confidence > 75
     for label in response['Labels']:
         if label['Name'] == "Person" and label['Confidence'] > 90:
-            print("(2. Identify if detected image is human): Label:" + label['Name'] + "; Confidence:" + str(
+            print("(2.1 Identify if detected image is human): Label:" + label['Name'] + "; Confidence:" + str(
                 label['Confidence']) + "  --->  is human = True")
             return True
-    print("(2. Identify if detected image is human):  --->  is human = False")
+    print("(2.1 Identify if detected image is human):  --->  is human = False")
     return False
 
 
@@ -60,12 +60,10 @@ def get_training_locations(user_id):
 
 def is_owner(sources, target, bucket, rekognition):
     response = False
-    print("detected image: " + str(target))
     if len(sources) > 0:
         index = -1
         for source in sources:
             index = index + 1
-            print("source: " + str(source))
             source = source['key']
             response = rekognition.compare_faces(
                 SourceImage={
@@ -156,7 +154,6 @@ def send_email(recipient, link, message=None):
 
 
 def generate_presigned_link(key, s3):
-    print("key: " + key)
     response = s3.generate_presigned_url(
         'get_object',
         Params={
@@ -166,7 +163,6 @@ def generate_presigned_link(key, s3):
         ExpiresIn=3600
     )
 
-    print("(link for image in notificaiton): link: " + response)
     return response
 
 
@@ -227,7 +223,8 @@ def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp):
                         'camera_id': camera_id,
                         'timestamp': timestamp
                     },
-                    'path_in_s3': path_in_s3
+                    'path_in_s3': path_in_s3,
+                    'key': key
                 }
             ]
         },
@@ -238,15 +235,11 @@ def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp):
 
 
 def append_log(message, user_id, token, key, camera_id):
-    timestamp = str(datetime.datetime.now().timestamp())
+    timestamp = str(datetime.now().timestamp())
     map = {
         'tag': 'detected',
         "message": message,
         "timestamp": timestamp,
-        "metadata": {
-            "key": key,
-            "camera_id": camera_id
-        }
     }
     response = requests.post(
         os.environ['LOGS_URL'],
@@ -257,6 +250,57 @@ def append_log(message, user_id, token, key, camera_id):
         headers={'Authorization': token}
     )
     print(f"(6. Append Log): Log message:{message};  timestamp:{timestamp}")
+
+
+def get_detected_frames(user_id):
+    client = boto3.client('dynamodb', region_name='af-south-1')
+    response = client.query(
+        TableName='Artefacts',
+        ProjectionExpression='frames',
+        KeyConditionExpression=f'user_id = :user_id',
+        ExpressionAttributeValues={
+            ':user_id': {"S": user_id}
+        }
+    )
+
+    detected_frames = from_dynamodb_to_json(response['Items'][0])
+    time_gap = datetime.now() - timedelta(minutes=10)
+    time_gap = str(time_gap.timestamp())
+    frames_to_check = []
+    detected_frames = detected_frames['frames']
+    for i in detected_frames:
+        if i['metadata']['timestamp'] > time_gap:
+            frames_to_check.append(i)
+    print(f"(2.2.1 Detected Frames in the past 10 min):  frames:{frames_to_check}")
+    return frames_to_check
+
+
+def is_detected_unique(user_id, target, rekognition):
+    print(f"(2.2 Get detected frames to see uniqueness): user_id:{user_id}; detected image:{target}")
+    detected_frames = get_detected_frames(user_id)
+    if len(detected_frames) > 0:
+        for i in detected_frames:
+            response = rekognition.compare_faces(
+                SourceImage={
+                    'S3Object': {
+                        'Bucket': os.environ['BUCKET'],
+                        'Name': target
+                    }
+                },
+                TargetImage={
+                    'S3Object': {
+                        'Bucket': os.environ['BUCKET'],
+                        'Name': i['key']
+                    }
+                }
+                # QualityFilter='NONE'|'AUTO'|'LOW'|'MEDIUM'|'HIGH'
+            )
+            if len(response['FaceMatches']) > 0:
+                print(
+                    f"(2.2.1 Detected image Uniqueness): Detected image is not unique: detected image:{target};   source image:{i['key']}")
+                return False
+    print(f"(2.2.1 Detected image Uniqueness): Detected image is unique: detected image:{target};")
+    return True
 
 
 def lambda_handler(event, context):
@@ -271,10 +315,9 @@ def lambda_handler(event, context):
     rekognition = boto3.client('rekognition', region_name=os.environ['REKOGNITION_REGION'])
     owner = False
     # response = "The image that was detected is not a human!"
-    if is_human(target, bucket, rekognition):
+    if is_human(target, bucket, rekognition) and is_detected_unique(uuid, target, rekognition):
         # face has been detected in detected image - now compare it to other images from user uploads
         preferences, training_set, security_level = get_training_locations(uuid)
-
         if security_level == 0:  # Disarmed ( no notifications are sent)
             print("(4. security level): level:0;   description:Disarmed;   action:no notifications are sent")
             log_message = "Watchdog has identified movement"
