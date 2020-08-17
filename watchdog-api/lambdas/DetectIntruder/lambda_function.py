@@ -5,6 +5,7 @@ import os
 from boto3.dynamodb.conditions import Key
 import requests
 import datetime
+from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 
 
 def is_human(photo, bucket, rekognition):
@@ -30,19 +31,28 @@ def is_human(photo, bucket, rekognition):
     return False
 
 
-def get_training_locations(uuid, token):
-    # Integration
-    response = requests.get(
-        os.environ['USER_DATA_URL'],
-        params={
-            'user_id': uuid
-        },
-        headers={'Authorization': token}
+def from_dynamodb_to_json(item):
+    d = TypeDeserializer()
+    return {k: d.deserialize(value=v) for k, v in item.items()}
+
+
+def get_training_locations(user_id):
+    client = boto3.client('dynamodb', region_name='af-south-1')
+
+    response = client.query(
+        TableName='UserData',
+        ProjectionExpression='identities.whitelist, preferences.notifications, preferences.security_level',
+        KeyConditionExpression=f'user_id = :user_id',
+        ExpressionAttributeValues={
+            ':user_id': {"S": user_id}
+        }
     )
-    response = json.loads(response.text)
-    training_set = response['data']['identities']['whitelist']
-    preferences = response['data']['preferences']['notifications']
-    security_level = int(response['data']['preferences']['security_level'])
+
+    data = from_dynamodb_to_json(response['Items'][0])
+
+    training_set = data['identities']['whitelist']
+    preferences = data['preferences']['notifications']
+    security_level = int(data['preferences']['security_level'])
     print("(3. Get user details): preferences:" + str(preferences) + " training set images:" + str(
         training_set) + " security_level:" + str(security_level))
     return preferences, training_set, security_level
@@ -50,8 +60,12 @@ def get_training_locations(uuid, token):
 
 def is_owner(sources, target, bucket, rekognition):
     response = False
+    print("detected image: " + str(target))
     if len(sources) > 0:
+        index = -1
         for source in sources:
+            index = index + 1
+            print("source: " + str(source))
             source = source['key']
             response = rekognition.compare_faces(
                 SourceImage={
@@ -69,34 +83,56 @@ def is_owner(sources, target, bucket, rekognition):
                 # QualityFilter='NONE'|'AUTO'|'LOW'|'MEDIUM'|'HIGH'
             )
             if len(response['FaceMatches']) > 0:
-                print("(5.a compare faces (training set & detected image)): Owner Identified:{source image:" + source + ", target image:" + target + "}")
-                return True
+                print(
+                    "(5.a compare faces (training set & detected image)): Owner Identified:{source image:" + source + ", target image:" + target + "}")
+                return True, index, source
     print("(5.a compare faces (training set & detected image)): Owner NOT Identified: target image:" + target)
-    return False
+    return False, -1, None
 
 
 def send_sms(number, link, message=None):
     sns = boto3.client("sns", region_name="eu-west-1")
     if message is None:
         message = "Please be aware that you may be experiencing a potential breach! View the detected image at the following link: " + link
-    sns.publish(PhoneNumber=number, Message=message)
-    print("sms sent to " + number)
+    else:
+        message = message + " View the detected image at the following link: " + link
+    # if phone[0] is not plus
+    # add +27 and remove the first digit
+    sns.publish(
+        PhoneNumber=number,
+        Message=message,
+        MessageAttributes={
+            'AWS.SNS.SMS.SenderID': {
+                'DataType': 'String',
+                'StringValue': 'Watchdog'
+            },
+            'AWS.SNS.SMS.SMSType': {
+                'DataType': 'String',
+                'StringValue': 'Transactional'
+            }
+        }
+    )
 
 
-def send_email(recipient, link):
+def send_email(recipient, link, message=None):
+    if message is None:
+        data = "Intruder Detected on property!"
+        message = "Please note that detection of a possible intruder has been captured on your camera feed."
+    else:
+        data = "Someone in your watchlist has been detected"
+
     BODY_HTML = f"""<html>
     <head></head>
     <body>
         <h1>Intruder Detected</h1>
         <p>
-            Please note that detection of a possible intruder has been captured 
-            on your camera. View the   
-            <a href={link}>detected image</a>
+            {message}
+            Click the following link to view the <a href={link}>detected image</a>
         </p>
     </body>
     </html>
     """
-    client = boto3.client('ses',region_name='eu-west-1')
+    client = boto3.client('ses', region_name='eu-west-1')
     response = client.send_email(
         Destination={
             'ToAddresses': [
@@ -112,7 +148,7 @@ def send_email(recipient, link):
             },
             'Subject': {
                 'Charset': "UTF-8",
-                'Data': "Intruder Detected on property!",
+                'Data': "",
             },
         },
         Source="lynk.solutions.tuks@gmail.com",
@@ -134,24 +170,25 @@ def generate_presigned_link(key, s3):
     return response
 
 
-def send_notification(preferences, target, s3):
+def send_notification(preferences, target, s3, send_to_security=True, custom_message=None):
     print("(5.b Send notificaiton to Owner & Security Company)")
     link = generate_presigned_link(target, s3)
     type = preferences['type']
     if type == 'sms':
         message = "Intruder detected"
-        send_sms(preferences['value'], link)
-        print(f"(5.b.1. Notify Owner) SMS:{message}; TO:{preferences['value']}")
+        send_sms(preferences['phone'], link, custom_message)
+        print(f"(5.b.1. Notify Owner) SMS:{message}; TO:{preferences['phone']}")
     elif type == 'email':
-        send_email(preferences['value'], link)
-        print(f"(5.b.1. Notify Owner) Email recipient:{preferences['value']}")
+        send_email(preferences['email'], link, custom_message)
+        print(f"(5.b.1. Notify Owner) Email recipient:{preferences['email']}")
     elif type == 'push':
         pass
-    if len(preferences['security_company']) > 0:
-        security_message = "One of your clients may have a potential breach! Please contact " + preferences[
-            'value'] + " immediately!"
-        print(f"(5.b.2. Notify security): SMS:{security_message}; TO:{preferences['security_company']}")
-        send_sms(preferences['security_company'], link)
+    if send_to_security:
+        if len(preferences['security_company']) > 0:
+            security_message = "One of your clients may have a potential breach! Please contact " + preferences[
+                'phone'] + " immediately!"
+            print(f"(5.b.2. Notify security): SMS:{security_message}; TO:{preferences['security_company']}")
+            send_sms(preferences['security_company'], link)
 
 
 def get_meta_data_from_event(event, s3):
@@ -177,7 +214,6 @@ def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp):
     table = client.Table('Artefacts')
     path_in_s3 = os.environ['OBJECT_URL'] + key
 
-    print(f"(7. Add detected image key to artifacts): Key:{key};    path in s3:{path_in_s3};    camera id:{camera_id}")
     response = table.update_item(
         Key={
             'user_id': uuid,
@@ -197,14 +233,20 @@ def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp):
         },
         ReturnValues="UPDATED_NEW"
     )
+    print(f"(7. Add detected image key to artifacts): Key:{key};    path in s3:{path_in_s3};    camera id:{camera_id}")
     return response
 
 
-def append_log(message, user_id, token):
+def append_log(message, user_id, token, key, camera_id):
     timestamp = str(datetime.datetime.now().timestamp())
     map = {
+        'tag': 'detected',
         "message": message,
-        "timestamp": timestamp
+        "timestamp": timestamp,
+        "metadata": {
+            "key": key,
+            "camera_id": camera_id
+        }
     }
     response = requests.post(
         os.environ['LOGS_URL'],
@@ -231,7 +273,7 @@ def lambda_handler(event, context):
     # response = "The image that was detected is not a human!"
     if is_human(target, bucket, rekognition):
         # face has been detected in detected image - now compare it to other images from user uploads
-        preferences, training_set, security_level = get_training_locations(uuid, token)
+        preferences, training_set, security_level = get_training_locations(uuid)
 
         if security_level == 0:  # Disarmed ( no notifications are sent)
             print("(4. security level): level:0;   description:Disarmed;   action:no notifications are sent")
@@ -239,19 +281,22 @@ def lambda_handler(event, context):
         elif security_level == 1:  # Recognised Only (so intruder notifications are sent)
             print(
                 "(4. security level): level:1;   description:Recognised Only;   action:notifications are sent if the detected image is an owner")
-            if not is_owner(training_set, target, bucket, rekognition):
+            io, index, source = is_owner(training_set, target, bucket, rekognition)
+            if not io:
                 send_notification(preferences, target, s3)
                 log_message = "Watchdog has identified a possible intruder, and has sent out a notificaiton!"
             else:
                 owner = True
                 log_message = "Watchdog has identified the owner in your feed!"
+                if training_set[index]['monitor']['watch']:
+                    send_notification(preferences, target, s3, False, training_set[index]['monitor']['custom_message'])
+                    owner = False
         else:  # Armed (notifications are sent for any face detected)
             print("(4. security level): level:2;   description:Armed;   action:notifications are sent")
             send_notification(preferences, target, s3)
             log_message = "Watchdog has identified a face in your feed. if this is your face, consider changing your security to level 1, security has been notified"
 
-        append_log(log_message, uuid, token)
-
+        append_log(log_message, uuid, token, target, camera_id)
         response = "Intruder Detected!"
     else:
         owner = True
