@@ -185,6 +185,77 @@ def lambda_handler(event, context):
                 "ReturnValues": "UPDATED_NEW"
             }
             resp = add_data(parameters)
+        elif '/identities/watchlist' in route:
+            # get parameters
+            key = params['key']
+            message = params['message']
+            watch = params['watch']
+
+            print(f"(1. parameters):  whitelist key:{key}  custom message:{message}  to watch:{watch}")
+
+            # get whitelist data
+            client = boto3.client('dynamodb', region_name='af-south-1')
+
+            response = client.query(
+                TableName='UserData',
+                KeyConditionExpression=f'user_id = :user_id',
+                ProjectionExpression='identities.whitelist',
+                ExpressionAttributeValues={
+                    ':user_id': {"S": user_id}
+                }
+            )
+
+            print("(2. get the whitelist frames): response:" + str(response))
+
+            data = from_dynamodb_to_json(response['Items'][0])
+
+            print(f"(2.1. Deserialised Data: {data}")
+
+            # no frames in the database
+            if len(data['identities']['whitelist']) > 0:
+                # get the index of the element to be update in the UserData table based on the user_id and the key element
+                index = -1
+                for count, x in enumerate(data['identities']['whitelist']):
+                    if 'message' in params:
+                        message = params['message']
+                    else:
+                        message = ""
+                    if data['identities']['whitelist'][count]['key'] == key:
+                        index = count
+                        break
+                if index != -1:
+                    print(f"(2. index of whitelist image to update): index:{index}")
+                    parameters = {
+                        "Key": {
+                            'user_id': user_id,
+                        },
+                        "UpdateExpression": f"SET identities.whitelist[{index}].monitor = :i",
+                        "ExpressionAttributeValues": {
+                            ":i": {
+                                "custom_message": message,
+                                "watch": int(watch)
+                            }
+                        },
+                        "ReturnValues": "UPDATED_NEW"
+                    }
+                    resp = success(msg="Whitelist image successfully added to watchlist", extra=add_data(parameters))
+
+                    print(f"(3. Updated inserted whitelist image response): response:{str(resp)}")
+                else:
+                    resp = error(
+                        msg=f'Whitelist image does not exist in the current whitelist list.',
+                        extra={
+                            "event": event
+                        }
+                    )
+            else:
+                resp = error(
+                    msg=f'There are currently no images in the whitelist list.',
+                    extra={
+                        "event": event
+                    }
+                )
+
         elif '/identities/tagdetectedimage' in route:
             key = params['key']
             name = params['name']
@@ -235,13 +306,17 @@ def lambda_handler(event, context):
                                     "metadata": {
                                         "camera_id": data['frames'][index]['metadata']['camera_id'],
                                         "aid": data['frames'][index]['aid']
+                                    },
+                                    "monitor": {
+                                        "watch": 0,
+                                        "custom_message": ""
                                     }
                                 }
                             ]
                         },
                         "ReturnValues": "UPDATED_NEW"
                     }
-                    resp = success(message="Image Successfully added to Whitelist", extra=add_data(parameters))
+                    resp = success(ms="Image Successfully added to Whitelist", extra=add_data(parameters))
 
                     print(f"(3. Updated inserted whitelist image response): response:{str(resp)}")
 
