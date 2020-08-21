@@ -1,25 +1,31 @@
-# Watchdog
+# Watchdog - API
 
+This repository contains all the code used in the API
 
-- [API](https://eu-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/API/browse?region=eu-west-1)
-- [Home Control Panel](https://eu-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/Home_Control_Panel/browse?region=eu-west-1)
-- [Frontend](https://eu-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/FrontEnd/browse?region=eu-west-1)
+### Watchdog Repositories
+
+- [API](https://github.com/COS301-SE-2020/Watchdog)
+- [Home Control Panel](https://github.com/COS301-SE-2020/Watchdog-API)
+- [Web Apllication](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/watchdog-frontend)
+- [Mobile Application](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/WatchdogApp)
+- [Stream Server](https://github.com/COS301-SE-2020/Watchdog-Stream-Server)
 
 
 ### Demo
-- [LynkSolutions-Demo2](https://drive.google.com/file/d/1JfVWYLl65t5PzllO-vNKPR-YlOt7DRnX/view?usp=sharing)
+- [LynkSolutions-Demo3](https://drive.google.com/file/d/1bSRqRJBJ-5sPx4G1vCkq2Al8BcTPFYOs/view?usp=sharing)
 
 
 ### Documentation
+- [SRS Document - version 3](https://drive.google.com/file/d/1dWVx8BrT0Nt8GKdyHLqmjKYzg1aGlRWS/view?usp=sharing)
+- [Technical Installation Manual](https://drive.google.com/file/d/1ouZquOIizf8omvOCnzMCG-wwS2qJyhzi/view?usp=sharing)
 - [Watchdog User Manual](https://drive.google.com/file/d/1gu36_44IbnKeGjC61VaDXLu3mLKEqTvr/view?usp=sharing)
-- [Coding Standards Document]()
-- [Demo 2 Documentation](https://drive.google.com/file/d/1eBr5il0vBNbcobf96etwTo1S3SHeI1IU/view?usp=sharing)
-- [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/) (If you 
+- [Coding Standards Document](https://drive.google.com/file/d/1X4IsmHWHwBjvmg1aaUua1HiC6rs6w5pO/view?usp=sharing)
+- [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/stories) (If you 
 require access please email a team member and we will add you to our workspace, since clubhouse does not allow external viewing)
 
 
 ### Deployed Website Link:
-- [Watchdog System](https://master.d18pg5ypwr9xji.amplifyapp.com/)
+- [Watchdog System](https://master.dtul6cza66juk.amplifyapp.com/)
 
 
 ### Project Description:
@@ -27,6 +33,8 @@ require access please email a team member and we will add you to our workspace, 
 For the South African household who need an efficient way to ensure their safety and security the Watchdog system is a home security system that utilizes machine 
 learning to identify an intruder and alert users and security companies on the potential breach. Unlike traditional surveillance systems that keep a backlog of 
 redundant video storage our product utilizes machine learning and a modern cloud architecture to deliver a real-time security system.
+
+
 
 ### Composing an API Route
 
