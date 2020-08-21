@@ -3,30 +3,8 @@
 This repository contains all the code used in the API
 
 ### Watchdog Repositories
-
-- [API](https://github.com/COS301-SE-2020/Watchdog)
-- [Home Control Panel](https://github.com/COS301-SE-2020/Watchdog-API)
-- [Web Apllication](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/watchdog-frontend)
-- [Mobile Application](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/WatchdogApp)
-- [Stream Server](https://github.com/COS301-SE-2020/Watchdog-Stream-Server)
-
-
-### Demo
-- [LynkSolutions-Demo3](https://drive.google.com/file/d/1bSRqRJBJ-5sPx4G1vCkq2Al8BcTPFYOs/view?usp=sharing)
-
-
-### Documentation
-- [SRS Document - version 3](https://drive.google.com/file/d/1dWVx8BrT0Nt8GKdyHLqmjKYzg1aGlRWS/view?usp=sharing)
-- [Technical Installation Manual](https://drive.google.com/file/d/1ouZquOIizf8omvOCnzMCG-wwS2qJyhzi/view?usp=sharing)
-- [Watchdog User Manual](https://drive.google.com/file/d/1gu36_44IbnKeGjC61VaDXLu3mLKEqTvr/view?usp=sharing)
-- [Coding Standards Document](https://drive.google.com/file/d/1X4IsmHWHwBjvmg1aaUua1HiC6rs6w5pO/view?usp=sharing)
-- [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/stories) (If you 
-require access please email a team member and we will add you to our workspace, since clubhouse does not allow external viewing)
-
-
-### Deployed Website Link:
-- [Watchdog System](https://master.dtul6cza66juk.amplifyapp.com/)
-
+|[Home Control Panel](https://github.com/COS301-SE-2020/Watchdog)|API|[Web Application](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/watchdog-frontend)|[Mobile Application](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/WatchdogApp)|[Stream Server](hhttps://github.com/COS301-SE-2020/Watchdog-Stream-Server)|
+|---|---|---|---|---|
 
 ### Project Description:
 
@@ -35,8 +13,27 @@ learning to identify an intruder and alert users and security companies on the p
 redundant video storage our product utilizes machine learning and a modern cloud architecture to deliver a real-time security system.
 
 
+### Demo Videos
+- [LynkSolutions-Demo1](https://drive.google.com/file/d/1mdyx54MLTo0vTAEx2nm5wwFgWU_ULEks/view?usp=sharing)
+- [LynkSolutions-Demo2](https://drive.google.com/file/d/1JfVWYLl65t5PzllO-vNKPR-YlOt7DRnX/view?usp=sharing)
+- [LynkSolutions-Demo3](https://drive.google.com/file/d/1bSRqRJBJ-5sPx4G1vCkq2Al8BcTPFYOs/view?usp=sharing)
+
+
+### Documentation
+- [SRS Document - version 3](https://drive.google.com/file/d/1dWVx8BrT0Nt8GKdyHLqmjKYzg1aGlRWS/view?usp=sharing)
+- [Technical Installation Manual](https://drive.google.com/file/d/1ouZquOIizf8omvOCnzMCG-wwS2qJyhzi/view?usp=sharing)
+- [Watchdog User Manual](https://drive.google.com/file/d/1gu36_44IbnKeGjC61VaDXLu3mLKEqTvr/view?usp=sharing)
+- [Coding Standards Document](https://drive.google.com/file/d/1X4IsmHWHwBjvmg1aaUua1HiC6rs6w5pO/view?usp=sharing)
+- [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/stories) (If you require access please email a team member and we will add you to our workspace, since clubhouse does not allow external viewing)
+
+
+### Deployed Website Link:
+- [Watchdog System](https://master.dtul6cza66juk.amplifyapp.com/)
+
+<details><summary><h3>About the API</h3></summary>
 
 ### Composing an API Route
+
 
 The API Gateway service facilitates all requests by the client of multiple routes and sources.
 To use and display the interactions present (request and response) in the system, provide the necessary query string specified in the Method Request tab, using the standard formating of ? to start the query and the ampersand symbol (&) to separate different query parameters.
@@ -45,30 +42,9 @@ The Integration Request type specifies the nature of how the transaction will be
 The Integration Response tab controls the HTTP response headers, the mapping of the responses (the JSON body and its content) as well as the output passthrough.
 The Method Response tab lists all the known responses that the route can generate (such as 200 for OK or 500 for Internal Server Error) and will provide the appropriate response based on the results of the request's processing. 
 
-### How to Use
 
-The API Gateway, once deployed, will use request URLs which can be accessed and requested in the browser to call that route and its functions and provide a response to the client. These URLs can either be used in a browser address bar (with the appropriate query strings for GET and DELETE requests), used in Postman (a third party application) for POST and UPDATE requests and their request bodies or as a cURL. 
-
-### Additionally...
-
-There are authorisation mechanisms on each route (enforced by AWS Cognito and authorised user pools) that will check on each API call that the address making the API call is of a valid and verified user.
+Additionally, There are authorisation mechanisms on each route (enforced by AWS Cognito and authorised user pools) that will check on each API call that the address making the API call is of a valid and verified user.
 There are resource policies written in the API Gateway configuration detailing the permissions that developers of the Watchdog system had and accesses to data and services, as well as the permissions that entail the API Gateway itself. 
-
-
-### Build Instructions:
-
-**Prerequisites**:
-- AWS Cli
-- AWS SAM Cli
-- Bash
-- Jupyter Notebook
-- A Watchdog Security System Account
-
-1. Clone this repo
-2. Change into the 'watchdog-api' directory ```cd watchdog-api```
-3. Execute ```sam local start-api```
-4. Use the provided Jupyter Notebook to access the API
-
 
 ##### Usage in Python
 
@@ -162,6 +138,25 @@ OpenAPI grants us the opportunity to have a standard interface with no language 
 
 Additionally, OpenAPI also has the ability to display the API by means of documentation tools that use its definition. It also allows functionalities to generate servers using code generation tools and facilitate testing using an appropriate testing kit. 
 
+</details>
+
+### How it Works
+
+The API Gateway, once deployed, will use request URLs which can be accessed and requested in the browser to call that route and its functions and provide a response to the client. These URLs can either be used in a browser address bar (with the appropriate query strings for GET and DELETE requests), used in Postman (a third party application) for POST and UPDATE requests and their request bodies or as a cURL.
+
+### Build Instructions:
+
+**Prerequisites**:
+- AWS Cli
+- AWS SAM Cli
+- Bash
+- Jupyter Notebook
+- A Watchdog Security System Account
+
+1. Clone this repo
+2. Change into the 'watchdog-api' directory ```cd watchdog-api```
+3. Execute ```sam local start-api```
+4. Use the provided Jupyter Notebook to access the API
 
 ### Members
 
@@ -174,7 +169,10 @@ Additionally, OpenAPI also has the ability to display the API by means of docume
 |Jonathan Sundy|u18079581|<https://jsundy.github.io>|<https://www.linkedin.com/in/jonathen-sundy-79b33b168/>|
 |Armin van Wyk|u18008632|<https://github.com/BigMacDaddy007>|<https://www.linkedin.com/in/armin-van-wyk-b714931a9/>|
 
-#### Profiles
+<details>
+<summary>
+<h1>Profiles</h1>
+</summary>
 
 ##### Luqmaan Badat
 
@@ -200,4 +198,5 @@ I have been exposed to an event-driven system that adopted modern cloud architec
 
 I have been involved in a multitude of projects inside and outside of the EBIT faculty. I have particular interest in front-end multimedia design to back-end REST API and hosting tasks. I have familiarity in databases both with and without SQ. I can use these skills in the request handling and data handling of our projects and ensure validated, clean and lightweight data.
 
+</details>
 
