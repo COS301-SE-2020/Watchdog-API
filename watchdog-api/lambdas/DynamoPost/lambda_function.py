@@ -34,12 +34,97 @@ def add_data(parameters):
     # return {}
 
 
+def get_blacklist_images(user_id):
+    client = boto3.client('dynamodb', region_name='af-south-1')
+
+    response = client.query(
+        TableName='Artefacts',
+        KeyConditionExpression=f'user_id = :user_id',
+        ProjectionExpression='blacklist',
+        ExpressionAttributeValues={
+            ':user_id': {"S": user_id}
+        }
+    )
+    print("(1. get the detected frames for the user): response:" + str(response))
+
+    data = from_dynamodb_to_json(response['Items'][0])
+
+    print(f"(1.1. Deserialised Data: {data}")
+    return data
+
+
+def get_index_of_blacklist_image(key, data):
+    index = -1
+    # no frames in the database
+    if len(data['blacklist']) != 0:
+        # get the index of the element to be deleted in the artefacts table based on the user_id and the key element
+        for count, x in enumerate(data['blacklist']):
+            if data['blacklist'][count]['key'] == key:
+                index = count
+                break
+    return index
+
+
+def add_image_to_profiles(key, camera_id, name, user_id):
+    client = boto3.resource('dynamodb', region_name='af-south-1')
+    table = client.Table('Artefacts')
+    response = table.update_item(
+        Key={
+            'user_id': user_id,
+        },
+        UpdateExpression="SET profiles = list_append(profiles, :i)",
+        ExpressionAttributeValues={
+            ":i": [
+                {
+                    "name": name,
+                    "key": key,
+                    "timestamp": str(datetime.datetime.now().timestamp()),
+                    "monitor": {
+                        "watch": 0,
+                        "custom_message": ""
+                    },
+                    "metadata": {
+                        "camera_id": camera_id,
+                    },
+                }
+            ]
+        },
+        ReturnValues="UPDATED_NEW"
+    )
+    return response
+
+
+def remove_blacklist_records(indices, user_id, key):
+    client = boto3.resource('dynamodb', region_name='af-south-1')
+    table = client.Table('Artefacts')
+
+    for index in indices:
+        res = table.update_item(
+            Key={
+                "user_id": user_id
+            },
+            UpdateExpression=f'REMOVE blacklist[{index}]',
+            ConditionExpression=f'blacklist[{index}].#key=:image_key',
+            ReturnValues="UPDATED_NEW",
+            ExpressionAttributeValues={
+                ':image_key': key
+            },
+            ExpressionAttributeNames={
+                '#key': "key"
+            }
+        )
+
+
 def lambda_handler(event, context):
+    print(f"POST BEGIN")
     route = event['resource']
     params = event['queryStringParameters']
     user_id = event['requestContext']['authorizer']['claims'][
         'sub']  # Get the user_id (which is the Cognito 'sub') from the Authorizer (which comes from Cognito when you use the WatchdogAuthorizer)
 
+    print(f"Prerequisite -> resource: {route}")
+    print(f"Prerequisite -> user_id: {user_id}")
+    print(f"Prerequisite -> params: {params}")
     resp = {}
 
     # Bundle the Response with an ERROR
@@ -85,7 +170,6 @@ def lambda_handler(event, context):
             default_params = {
                 "Key": {"user_id": user_id},
                 "ReturnValues": "UPDATED_NEW",
-
             }
 
             check_site = {
@@ -139,8 +223,15 @@ def lambda_handler(event, context):
             resp = success(msg=f'Dynamo UpdateItem Completed for "{route}. 3 operations completed successfully."',
                            extra={"data": resp})
         elif '/preferences' in route:
-            data = loadBase64Json(event["body"])
-            if '/securitylevel' in route:
+            print("-> Compiling DATA")
+            data = {}
+            if "body" in event.keys():
+                if event["body"] is not None:
+                    data = loadBase64Json(event["body"])
+
+            print(f"-> DATA: {data}")
+
+            if '/preferences/securitylevel' in route:
                 parameters = {
                     "Key": {"user_id": user_id},
                     "UpdateExpression": f'SET preferences.security_level = :obj',
@@ -150,19 +241,26 @@ def lambda_handler(event, context):
                     "ReturnValues": "UPDATED_NEW"
                 }
                 resp = add_data(parameters)
-            elif '/notifications' in route:
+            elif '/preferences/notifications' in route:
+                print('(ROUTE: /notifications)')
                 parameters = {
                     "Key": {"user_id": user_id},
-                    "UpdateExpression": f'SET preferences.notifications.security_company = :security_company, SET preferences.notification.type = :type',
+                    "UpdateExpression": f'SET preferences.notifications.security_company = :security_company, preferences.notifications.#type = :message_type',
                     "ExpressionAttributeValues": {
-                        ":security_company": data.security_company,
-                        ":type": data.type
+                        ":security_company": params["security_company"],
+                        ":message_type": params["type"]
+                    },
+                    "ExpressionAttributeNames": {
+                        "#type": "type"
                     },
                     "ReturnValues": "UPDATED_NEW"
                 }
-                print(data)
+
+                print(f"(1. /notifications)[prepare parameters]: {parameters}")
                 resp = add_data(parameters)
+                print(f"(2. /notifications) [DONE]: {resp}")
             else:
+                print('(ROUTE: /preferences')
                 parameters = {
                     "Key": {"user_id": user_id},
                     "UpdateExpression": f'SET preferences = :obj',
@@ -185,6 +283,23 @@ def lambda_handler(event, context):
                 "ReturnValues": "UPDATED_NEW"
             }
             resp = add_data(parameters)
+        elif '/identities/tagdetectedimage' in route:
+            key = params['key']
+            name = params['name']
+
+            data = get_blacklist_images(user_id)
+
+            index = get_index_of_blacklist_image(key, data)
+            print(
+                f"(2. index of detected frame and metadata): index:{index}  camera_id: {data['blacklist'][index]['metadata']['camera_id']}")
+
+            if index != -1:
+                response = add_image_to_profiles(key, data['blacklist'][index]['metadata']['camera_id'], name, user_id)
+                resp = success(msg="Image Successfully added to Whitelist", extra=response)
+                print(f"(3. Add image to profiles): response:{str(resp)}")
+                indices = [index]
+                remove_blacklist_records(indices, user_id, key)
+                print(f"(4. Updated removed artefacts table record with removed detected frame):")
         elif '/identities/watchlist' in route:
             # get parameters
             key = params['key']
@@ -197,48 +312,49 @@ def lambda_handler(event, context):
             client = boto3.client('dynamodb', region_name='af-south-1')
 
             response = client.query(
-                TableName='UserData',
+                TableName='Artefacts',
                 KeyConditionExpression=f'user_id = :user_id',
-                ProjectionExpression='identities.whitelist',
+                ProjectionExpression='profiles',
                 ExpressionAttributeValues={
                     ':user_id': {"S": user_id}
                 }
             )
 
-            print("(2. get the whitelist frames): response:" + str(response))
+            print("(2. get profile frames): response:" + str(response))
 
             data = from_dynamodb_to_json(response['Items'][0])
 
             print(f"(2.1. Deserialised Data: {data}")
 
             # no frames in the database
-            if len(data['identities']['whitelist']) > 0:
+            if len(data['profiles']) > 0:
                 # get the index of the element to be update in the UserData table based on the user_id and the key element
                 index = -1
-                for count, x in enumerate(data['identities']['whitelist']):
-                    if 'message' in params:
-                        message = params['message']
-                    else:
-                        message = ""
-                    if data['identities']['whitelist'][count]['key'] == key:
+                for count, x in enumerate(data['profiles']):
+                    if data['profiles'][count]['key'] == key:
                         index = count
                         break
                 if index != -1:
                     print(f"(2. index of whitelist image to update): index:{index}")
-                    parameters = {
-                        "Key": {
+
+                    client = boto3.resource('dynamodb')
+                    table = client.Table('Artefacts')
+
+                    response = table.update_item(
+                        Key={
                             'user_id': user_id,
                         },
-                        "UpdateExpression": f"SET identities.whitelist[{index}].monitor = :i",
-                        "ExpressionAttributeValues": {
+                        UpdateExpression=f"SET profiles[{index}].monitor = :i",
+                        ExpressionAttributeValues={
                             ":i": {
                                 "custom_message": message,
                                 "watch": int(watch)
                             }
                         },
-                        "ReturnValues": "UPDATED_NEW"
-                    }
-                    resp = success(msg="Whitelist image successfully added to watchlist", extra=add_data(parameters))
+                        ReturnValues="UPDATED_NEW"
+                    )
+
+                    resp = success(msg="Whitelist image successfully added to watchlist", extra=response)
 
                     print(f"(3. Updated inserted whitelist image response): response:{str(resp)}")
                 else:
@@ -251,101 +367,6 @@ def lambda_handler(event, context):
             else:
                 resp = error(
                     msg=f'There are currently no images in the whitelist list.',
-                    extra={
-                        "event": event
-                    }
-                )
-
-        elif '/identities/tagdetectedimage' in route:
-            key = params['key']
-            name = params['name']
-
-            client = boto3.client('dynamodb', region_name='af-south-1')
-
-            response = client.query(
-                TableName='Artefacts',
-                KeyConditionExpression=f'user_id = :user_id',
-                ProjectionExpression='frames',
-                ExpressionAttributeValues={
-                    ':user_id': {"S": user_id}
-                }
-            )
-            print("(1. get the detected frames for the user): response:" + str(response))
-
-            data = from_dynamodb_to_json(response['Items'][0])
-
-            print(f"(1.1. Deserialised Data: {data}")
-
-            # no frames in the database
-            if len(data['frames']) != 0:
-
-                # get the index of the element to be deleted in the artefacts table based on the user_id and the key element
-                path_in_s3 = os.environ['OBJECT_URL'] + key
-                index = -1
-                for count, x in enumerate(data['frames']):
-                    if data['frames'][count]['path_in_s3'] == path_in_s3:
-                        index = count
-                        break
-
-                if index != -1:
-                    print(
-                        f"(2. index of detected frame and metadata): index:{index}  camera_id: {data['frames'][index]['metadata']['camera_id']}  aid:{data['frames'][index]['aid']}")
-
-                    parameters = {
-                        "Key": {
-                            'user_id': user_id,
-                        },
-                        "UpdateExpression": "SET identities.whitelist = list_append(identities.whitelist, :i)",
-                        "ExpressionAttributeValues": {
-                            ":i": [
-                                {
-                                    "key": key,
-                                    "path_in_s3": path_in_s3,
-                                    "name": name,
-                                    "timestamp": str(datetime.datetime.now().timestamp()),
-                                    "metadata": {
-                                        "camera_id": data['frames'][index]['metadata']['camera_id'],
-                                        "aid": data['frames'][index]['aid']
-                                    },
-                                    "monitor": {
-                                        "watch": 0,
-                                        "custom_message": ""
-                                    }
-                                }
-                            ]
-                        },
-                        "ReturnValues": "UPDATED_NEW"
-                    }
-                    resp = success(ms="Image Successfully added to Whitelist", extra=add_data(parameters))
-
-                    print(f"(3. Updated inserted whitelist image response): response:{str(resp)}")
-
-                    client = boto3.resource('dynamodb', region_name='af-south-1')
-                    table = client.Table('Artefacts')
-
-                    res = table.update_item(
-                        Key={
-                            "user_id": user_id
-                        },
-                        UpdateExpression=f'REMOVE frames[{index}]',
-                        ConditionExpression=f'frames[{index}].path_in_s3=:path_in_s3',
-                        ReturnValues="UPDATED_NEW",
-                        ExpressionAttributeValues={
-                            ':path_in_s3': path_in_s3
-                        }
-                    )
-                    print(
-                        f"(4. Updated removed artefacts table record with removed detected frame): response:{str(res)}")
-                else:
-                    resp = error(
-                        msg=f'Detected image is not found within the given detected images.',
-                        extra={
-                            "event": event
-                        }
-                    )
-            else:
-                resp = error(
-                    msg=f'There are currently no images in the detected list.',
                     extra={
                         "event": event
                     }
