@@ -10,7 +10,7 @@ def lambda_handler(event, context):
     # define rekognition resource
     owner = False
     response = "Person was identified within the last 10 minutes and will not be processed again"
-    if is_detected_unique(uuid, target):
+    if face_detected(target) and is_detected_unique(uuid, target):
         # face has been detected in detected image - now compare it to other images from user uploads
         preferences, training_set, security_level = get_training_locations(uuid)
         
@@ -37,7 +37,7 @@ def lambda_handler(event, context):
         response = "Intruder Detected!"  
 
         # add to Dynamo DB - artifacts
-        add_detected_image_to_artefacts(target, uuid, camera_id, timestamp, io)
+        add_detected_image_to_artefacts(target, uuid, camera_id, timestamp, io, source)
     else:
         # person is detected within 10 minutes, therefore, do not save image
         remove_s3_object(target)

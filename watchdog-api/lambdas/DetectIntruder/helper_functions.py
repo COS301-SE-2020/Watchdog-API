@@ -49,18 +49,36 @@ def get_training_locations(user_id):
     return preferences, training_set, security_level
 
 
+def face_detected(img_name):
+    response = rekognition.detect_labels(
+        Image={
+            'S3Object':{
+                'Bucket':os.environ['BUCKET'],
+                'Name':img_name
+            }
+        },
+        MinConfidence=90
+    )
+    
+    for label in response['Labels']:
+        if label['Name'] == "Person" and label['Confidence'] > 90:
+            print("face detected in image "+img_name)
+            return True
+    print("face NOT detected in image "+img_name)
+    return False
+
+
 def is_owner(sources, target, bucket):
     response = False
     if len(sources) > 0:
         index = -1
         for source in sources:
             index = index + 1
-            source = source['key']
             response = rekognition.compare_faces(
                 SourceImage={
                     'S3Object': {
                         'Bucket': bucket,
-                        'Name': source
+                        'Name': source['key']
                     }
                 },
                 TargetImage={
@@ -72,7 +90,7 @@ def is_owner(sources, target, bucket):
                 # QualityFilter='NONE'|'AUTO'|'LOW'|'MEDIUM'|'HIGH'
             )
             if len(response['FaceMatches']) > 0:
-                print("(5.a compare faces (training set & detected image)): Owner Identified:{source image:"+source+", target image:"+target+"}")
+                print("(5.a compare faces (training set & detected image)): Owner Identified:{source image:"+source['key']+", target image:"+target+"}")
                 return True, index, source
     print("(5.a compare faces (training set & detected image)): Owner NOT Identified: target image:"+target)
     return False, -1, None
@@ -198,12 +216,20 @@ def remove_s3_object(key):
     print(f"(3. Delete detected false-positive): Key:{key}")
 
 
-def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp, io):
+def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp, io, source):
     client = boto3.resource('dynamodb', region_name='af-south-1')
     table = client.Table('Artefacts')
     
+    data = {
+        'key': key,
+        'timestamp':timestamp,
+        'metadata': {
+            'camera_id':camera_id
+        }
+    }
     if io:
         field = 'whitelist'
+        data.update({'aid':source['aid']})
     else:
         field = 'blacklist'
 
@@ -214,14 +240,8 @@ def add_detected_image_to_artefacts(key, uuid, camera_id, timestamp, io):
         UpdateExpression=f"SET {field} = list_append({field}, :i)",
         ExpressionAttributeValues={
             ":i": [
-                {
-                    'key': key,
-                    'timestamp':timestamp,
-                    'metadata': {
-                        'camera_id':camera_id
-                    }
+                data
                     # 'aid': hash(f'{key}-{uuid}'),
-                }
             ]
         },
         ReturnValues="UPDATED_NEW"

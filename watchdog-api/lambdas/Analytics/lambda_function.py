@@ -1,57 +1,73 @@
-from helper_functions import *
+from owner_analytics import *
+from dashboard_analytics import *
+
+def error(msg):
+    return {
+        "status": "ERROR",
+        "message": f'Encountered an Unexpected Error: {msg}'
+    }
+    
+# Bundle the response with an OK
+def success(msg, extra={}):
+    return {
+        "status": "OK",
+        "message": f'Operation Completed with Message: {msg}',
+        "data": extra
+    }
 
 
 def lambda_handler(event, context):
-    # get parameters from s3 object
-    uuid, target, camera_id, timestamp, token = get_meta_data_from_event(event)
-    print(f"(1. Parameters): Detected Image: {target}; User ID: {uuid}; camera id:{camera_id}   timestamp:{timestamp}   token:{token}")
-    bucket = os.environ['BUCKET']
+    route = event['resource']
+    params = event['queryStringParameters']
+    user_id = event["requestContext"]["authorizer"]["claims"]["sub"]
     
-    # define rekognition resource
-    owner = False
-    response = "Person was identified within the last 10 minutes and will not be processed again"
-    if face_detected(target) and is_detected_unique(uuid, target):
-        # face has been detected in detected image - now compare it to other images from user uploads
-        preferences, training_set, security_level = get_training_locations(uuid)
+    end_date = params['end_date']
+
+    if "profile" in route:
+        time_scale = params['time_scale']
+        try:
+            # profile analytics
+            # 1. preprocess data - load profiles with data structure of graph
+            profiles, whitelist = get_profile_data(user_id)
+            print(f"(1.1 get profile data): profiles:{profiles}    whitelist:{whitelist}")
+            # 2. load data - go through whitelist images and add the images to specified list
+            graph_skeleton, intervals = get_profile_template_data(end_date, time_scale)
+            print(f"(2.1 ): graph data skeleton:{graph_skeleton}  intervals: {intervals}")
+            graph_data = []
+            for profile in profiles:
+                graph_data.append(
+                    {
+                        "id":profile["name"],
+                        "aid":profile["aid"],
+                        "color":f"hsl({randint(0,10)*36},50%,50%)",
+                        "data":deepcopy(graph_skeleton)
+                    }
+                )
+    
+            print(f"(2. graph skeleton data with profiles): data:{graph_data}")
+            graph_data = populate_graph_data(graph_data, whitelist, intervals, user_id)
+            print(f"(3. graph populated data): graph data:{graph_data}")
+            resp = success(f"Successfully retrieved graph data for interval {time_scale}", graph_data)
+        except Exception as e:
+            print(e)
+            resp = error(f'Could not complete Profile Analytics due to Error: {e}')
+    elif "dashboard" in route:
+        try:
+            whitelist, blacklist = get_detected_data(user_id)
+            print(f"(1. get detected image data): whitelist:{whitelist} blacklist:{blacklist}")
+            detected_images = [whitelist, blacklist]
+            labels, datasets, intervals = get_dashboard_template_data(end_date)
+            print(f"(2. dashboard template data): labels:{labels}   datasets:{datasets}    intervals:{intervals}")
+            for i, dataset in enumerate(datasets):
+                dataset['data'] = get_y_points_from_set(detected_images[i], intervals)
+            data = {
+                "labels":labels,
+                "datasets":datasets
+            }
+            print("(3. data to return): data:"+str(data))
+            resp = success(f"Successfully retrieved graph data", data)
+        except Exception as e:
+            print(e)
+            resp = error(f'Could not complete Dashboard Analytics due to Error: {e}')
         
-        io, index, source = is_owner(training_set, target, bucket)
-        
-        if security_level == 0: # Disarmed ( no notifications are sent)
-            print("(4. security level): level:0;   description:Disarmed;   action:no notifications are sent")
-            log_message = "Watchdog has identified movement"
-        elif security_level == 1:   # Recognised Only (so intruder notifications are sent)
-            print("(4. security level): level:1;   description:Recognised Only;   action:notifications are sent if the detected image is an owner")
-            if not io:
-                send_notification(preferences, target)
-                log_message = "Watchdog has identified a possible intruder, and has sent out a notificaiton!"
-            else:
-                log_message = "Watchdog has identified the owner in your feed!"
-                if training_set[index]['monitor']['watch']:
-                    send_notification(preferences, target, False, training_set[index]['monitor']['custom_message'])
-        else:   # Armed (notifications are sent for any face detected)
-            print("(4. security level): level:2;   description:Armed;   action:notifications are sent")
-            send_notification(preferences, target)
-            log_message = "Watchdog has identified a face in your feed. if this is your face, consider changing your security to level 1, security has been notified"
-        
-        append_log(log_message, uuid, token, target, camera_id)
-        response = "Intruder Detected!"  
-
-        # add to Dynamo DB - artifacts
-        add_detected_image_to_artefacts(target, uuid, camera_id, timestamp, io, source)
-    else:
-        # person is detected within 10 minutes, therefore, do not save image
-        remove_s3_object(target)
-
-
-    resp = {
-        "response": response
-    }
-    respObj = {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": resp
-    }
-
-    return respObj
+    return {"statusCode":200, "headers": {"Access-Control-Allow-Origin": "*"}, "body":json.dumps(resp)}
