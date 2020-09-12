@@ -6,37 +6,33 @@ import decimal
 import datetime
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 
-
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
             return float(o)
         return super(DecimalEncoder, self).default(o)
 
-
 def from_dynamodb_to_json(item):
     d = TypeDeserializer()
     return {k: d.deserialize(value=v) for k, v in item.items()}
 
-
 def loadBase64Json(obj):
     return json.loads(str(b64decode(obj), 'utf-8').strip())
-
-
+    
 def add_data(parameters):
     client = boto3.resource('dynamodb')
     table = client.Table('UserData')
-
+    
     # Create operation
     # print(parameters)
     # return parameters
     return table.update_item(**parameters)
     # return {}
-
-
+    
+    
 def get_blacklist_images(user_id):
     client = boto3.client('dynamodb', region_name='af-south-1')
-
+        
     response = client.query(
         TableName='Artefacts',
         KeyConditionExpression=f'user_id = :user_id',
@@ -45,14 +41,42 @@ def get_blacklist_images(user_id):
             ':user_id': {"S": user_id}
         }
     )
-    print("(1. get the detected frames for the user): response:" + str(response))
-
+    print("(1. get the detected frames for the user): response:"+str(response))
+    
     data = from_dynamodb_to_json(response['Items'][0])
-
+    
     print(f"(1.1. Deserialised Data: {data}")
     return data
+    
 
+def is_email_verified(user_id):
+    client = boto3.client('dynamodb', region_name='af-south-1')
+        
+    response = client.query(
+        TableName='UserData',
+        KeyConditionExpression=f'user_id = :user_id',
+        ProjectionExpression='preferences.notifications.email',
+        ExpressionAttributeValues={
+            ':user_id': {"S": user_id}
+        }
+    )
+    
+    email = from_dynamodb_to_json(response['Items'][0])
+    email = email['preferences']['notifications']['email']
+    print(f"(1. get email address of user): response:{email}")
+    
+    ses = boto3.client('ses', region_name='eu-west-1')
 
+    verified_emails = ses.list_identities(IdentityType = 'EmailAddress')
+    verified_emails = verified_emails['Identities']
+    print(f"(1. get verified email addresses in SES): response:{verified_emails}")
+    
+    for verified_email in verified_emails:
+        if verified_email == email:
+            return True
+    return False
+
+    
 def get_index_of_blacklist_image(key, data):
     index = -1
     # no frames in the database
@@ -63,10 +87,10 @@ def get_index_of_blacklist_image(key, data):
                 index = count
                 break
     return index
-
+    
 
 def add_image_to_profiles(key, camera_id, name, user_id):
-    client = boto3.resource('dynamodb', region_name='af-south-1')
+    client = boto3.resource('dynamodb', region_name = 'af-south-1')
     table = client.Table('Artefacts')
     response = table.update_item(
         Key={
@@ -76,14 +100,15 @@ def add_image_to_profiles(key, camera_id, name, user_id):
         ExpressionAttributeValues={
             ":i": [
                 {
-                    "name": name,
-                    "key": key,
+                    "name":name,
+                    'aid': str(hash(f'{key}-{user_id}')),
+                    "key":key,
                     "timestamp": str(datetime.datetime.now().timestamp()),
                     "monitor": {
                         "watch": 0,
                         "custom_message": ""
                     },
-                    "metadata": {
+                    "metadata":{
                         "camera_id": camera_id,
                     },
                 }
@@ -92,20 +117,19 @@ def add_image_to_profiles(key, camera_id, name, user_id):
         ReturnValues="UPDATED_NEW"
     )
     return response
-
-
+    
 def remove_blacklist_records(indices, user_id, key):
-    client = boto3.resource('dynamodb', region_name='af-south-1')
+    client = boto3.resource('dynamodb', region_name = 'af-south-1')
     table = client.Table('Artefacts')
-
+    
     for index in indices:
         res = table.update_item(
-            Key={
+            Key =  {
                 "user_id": user_id
             },
-            UpdateExpression=f'REMOVE blacklist[{index}]',
-            ConditionExpression=f'blacklist[{index}].#key=:image_key',
-            ReturnValues="UPDATED_NEW",
+            UpdateExpression = f'REMOVE blacklist[{index}]',
+            ConditionExpression = f'blacklist[{index}].#key=:image_key',
+            ReturnValues = "UPDATED_NEW",
             ExpressionAttributeValues={
                 ':image_key': key
             },
@@ -113,28 +137,27 @@ def remove_blacklist_records(indices, user_id, key):
                 '#key': "key"
             }
         )
-
+    
 
 def lambda_handler(event, context):
     print(f"POST BEGIN")
     route = event['resource']
     params = event['queryStringParameters']
-    user_id = event['requestContext']['authorizer']['claims'][
-        'sub']  # Get the user_id (which is the Cognito 'sub') from the Authorizer (which comes from Cognito when you use the WatchdogAuthorizer)
-
+    user_id = event['requestContext']['authorizer']['claims']['sub'] # Get the user_id (which is the Cognito 'sub') from the Authorizer (which comes from Cognito when you use the WatchdogAuthorizer)
+    
     print(f"Prerequisite -> resource: {route}")
     print(f"Prerequisite -> user_id: {user_id}")
     print(f"Prerequisite -> params: {params}")
     resp = {}
-
+    
     # Bundle the Response with an ERROR
     def error(msg, extra={}):
         return {
-            "status": "ERROR",
-            "message": f'Encountered an Unexpected Error: {msg}',
-            **extra
+                "status": "ERROR",
+                "message": f'Encountered an Unexpected Error: {msg}',
+                **extra
         }
-
+        
     # Bundle the response with an OK
     def success(msg, extra={}):
         return {
@@ -142,15 +165,15 @@ def lambda_handler(event, context):
             "message": f'Operation Completed with Message: {msg}',
             "data": {**extra}
         }
-
+    
     try:
         if '/sites' in route:
             site_id = params["site_id"]
-            data = loadBase64Json(event["body"])
-
+            data=loadBase64Json(event["body"])
+            
             if 'metadata' not in data.keys():
                 data['metadata'] = {}
-
+                
             parameters = {
                 "Key": {"user_id": user_id},
                 "UpdateExpression": f'SET control_panel.{site_id} = :obj',
@@ -165,13 +188,13 @@ def lambda_handler(event, context):
             site_id = params["site_id"]
             location = params["location"]
             camera_id = params["camera_id"]
-            print("uploading camera " + camera_id + " from site " + site_id)
+            print("uploading camera "+camera_id+" from site "+site_id)
             data = loadBase64Json(event["body"])
             default_params = {
                 "Key": {"user_id": user_id},
                 "ReturnValues": "UPDATED_NEW",
             }
-
+            
             check_site = {
                 **default_params,
                 "UpdateExpression": f'SET control_panel.#site = if_not_exists(control_panel.#site, :obj)',
@@ -183,7 +206,7 @@ def lambda_handler(event, context):
                 "ExpressionAttributeNames": {
                     '#site': site_id
                 }
-
+                
             }
             check_location = {
                 **default_params,
@@ -203,9 +226,9 @@ def lambda_handler(event, context):
                     ":obj": data
                 },
                 "ExpressionAttributeNames": {
-                    '#site': site_id,
-                    '#location': location,
-                    '#camera': camera_id
+                  '#site': site_id,
+                  '#location': location,
+                  '#camera': camera_id
                 },
                 "ExpressionAttributeNames": {
                     '#site': site_id,
@@ -213,24 +236,23 @@ def lambda_handler(event, context):
                     '#camera': camera_id
                 }
             }
-
+            
             resp = [
                 add_data(check_site),
                 add_data(check_location),
                 add_data(add_camera)
             ]
-
-            resp = success(msg=f'Dynamo UpdateItem Completed for "{route}. 3 operations completed successfully."',
-                           extra={"data": resp})
+            
+            resp = success(msg=f'Dynamo UpdateItem Completed for "{route}. 3 operations completed successfully."', extra={"data":resp})
         elif '/preferences' in route:
             print("-> Compiling DATA")
             data = {}
             if "body" in event.keys():
                 if event["body"] is not None:
                     data = loadBase64Json(event["body"])
-
+                
             print(f"-> DATA: {data}")
-
+                
             if '/preferences/securitylevel' in route:
                 parameters = {
                     "Key": {"user_id": user_id},
@@ -242,23 +264,41 @@ def lambda_handler(event, context):
                 }
                 resp = add_data(parameters)
             elif '/preferences/notifications' in route:
-                print('(ROUTE: /notifications)')
-                parameters = {
-                    "Key": {"user_id": user_id},
-                    "UpdateExpression": f'SET preferences.notifications.security_company = :security_company, preferences.notifications.#type = :message_type',
-                    "ExpressionAttributeValues": {
-                        ":security_company": params["security_company"],
-                        ":message_type": params["type"]
+                client = boto3.resource('dynamodb',region_name='af-south-1')
+                table = client.Table('UserData')
+                table.update_item(
+                    Key={"user_id": user_id},
+                    UpdateExpression='SET preferences.notifications.security_company = :security_company',
+                    ExpressionAttributeValues={
+                        ":security_company": params["security_company"]
                     },
-                    "ExpressionAttributeNames": {
-                        "#type": "type"
-                    },
-                    "ReturnValues": "UPDATED_NEW"
-                }
+                    ReturnValues="UPDATED_NEW"
+                )
+                print("updated security company number")
+                is_valid = True
+                resp = {}
+                if params['type'] == 'email':
+                    if not is_email_verified(user_id):
+                        is_valid = False
+                        print("TEMP: email NOT verified")
+                        resp.update({"email_verified":False})
+                    else:
+                        print("TEMP: email verified")
+                        resp.update({"email_verified":True})
 
-                print(f"(1. /notifications)[prepare parameters]: {parameters}")
-                resp = add_data(parameters)
-                print(f"(2. /notifications) [DONE]: {resp}")
+                if is_valid:
+                    table.update_item(
+                        Key={"user_id": user_id},
+                        UpdateExpression='SET preferences.notifications.#type = :message_type',
+                        ExpressionAttributeValues={
+                            ":message_type": params["type"]
+                        },
+                        ExpressionAttributeNames={
+                            "#type": "type"
+                        },
+                        ReturnValues="UPDATED_NEW"
+                    )
+                    print("updated notification type preferences for "+params["type"])
             else:
                 print('(ROUTE: /preferences')
                 parameters = {
@@ -272,7 +312,7 @@ def lambda_handler(event, context):
                 resp = add_data(parameters)
             resp = success(msg=f'Dynamo UpdateItem Completed for "{route}"', extra=resp)
         elif '/logs' in route:
-            data = loadBase64Json(event["body"])
+            data=loadBase64Json(event["body"])
             print(data)
             parameters = {
                 "Key": {"user_id": user_id},
@@ -286,15 +326,14 @@ def lambda_handler(event, context):
         elif '/identities/tagdetectedimage' in route:
             key = params['key']
             name = params['name']
-
+            
             data = get_blacklist_images(user_id)
-
+            
             index = get_index_of_blacklist_image(key, data)
-            print(
-                f"(2. index of detected frame and metadata): index:{index}  camera_id: {data['blacklist'][index]['metadata']['camera_id']}")
-
+            print(f"(2. index of detected frame and metadata): index:{index}  camera_id: {data['blacklist'][index]['metadata']['camera_id']}")
+            
             if index != -1:
-                response = add_image_to_profiles(key, data['blacklist'][index]['metadata']['camera_id'], name, user_id)
+                response = add_image_to_profiles(key, data['blacklist'][index]['metadata']['camera_id'], name, user_id) 
                 resp = success(msg="Image Successfully added to Whitelist", extra=response)
                 print(f"(3. Add image to profiles): response:{str(resp)}")
                 indices = [index]
@@ -305,12 +344,12 @@ def lambda_handler(event, context):
             key = params['key']
             message = params['message']
             watch = params['watch']
-
+            
             print(f"(1. parameters):  whitelist key:{key}  custom message:{message}  to watch:{watch}")
 
             # get whitelist data
             client = boto3.client('dynamodb', region_name='af-south-1')
-
+            
             response = client.query(
                 TableName='Artefacts',
                 KeyConditionExpression=f'user_id = :user_id',
@@ -319,13 +358,13 @@ def lambda_handler(event, context):
                     ':user_id': {"S": user_id}
                 }
             )
-
-            print("(2. get profile frames): response:" + str(response))
-
+            
+            print("(2. get profile frames): response:"+str(response))
+            
             data = from_dynamodb_to_json(response['Items'][0])
-
+            
             print(f"(2.1. Deserialised Data: {data}")
-
+            
             # no frames in the database
             if len(data['profiles']) > 0:
                 # get the index of the element to be update in the UserData table based on the user_id and the key element
@@ -346,27 +385,27 @@ def lambda_handler(event, context):
                         },
                         UpdateExpression=f"SET profiles[{index}].monitor = :i",
                         ExpressionAttributeValues={
-                            ":i": {
+                            ":i":{
                                 "custom_message": message,
                                 "watch": int(watch)
-                            }
+                                }
                         },
                         ReturnValues="UPDATED_NEW"
                     )
-
+  
                     resp = success(msg="Whitelist image successfully added to watchlist", extra=response)
-
+                    
                     print(f"(3. Updated inserted whitelist image response): response:{str(resp)}")
                 else:
                     resp = error(
-                        msg=f'Whitelist image does not exist in the current whitelist list.',
+                        msg=f'Whitelist image does not exist in the current whitelist list.', 
                         extra={
                             "event": event
                         }
                     )
             else:
                 resp = error(
-                    msg=f'There are currently no images in the whitelist list.',
+                    msg=f'There are currently no images in the whitelist list.', 
                     extra={
                         "event": event
                     }
@@ -379,7 +418,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(str(e))
         resp = error(f'Could not complete operation due to this error: "{str(e)}"')
-
+    
     return {
         'statusCode': 200,
         'headers': {"Access-Control-Allow-Origin": "*"},
