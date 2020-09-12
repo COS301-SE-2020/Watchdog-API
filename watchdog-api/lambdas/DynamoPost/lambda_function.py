@@ -47,9 +47,8 @@ def get_blacklist_images(user_id):
     
     print(f"(1.1. Deserialised Data: {data}")
     return data
-    
 
-def is_email_verified(user_id):
+def get_email_address_from_user(user_id):
     client = boto3.client('dynamodb', region_name='af-south-1')
         
     response = client.query(
@@ -64,6 +63,10 @@ def is_email_verified(user_id):
     email = from_dynamodb_to_json(response['Items'][0])
     email = email['preferences']['notifications']['email']
     print(f"(1. get email address of user): response:{email}")
+    return email
+
+def is_email_verified(user_id):
+    email = get_email_address_from_user(user_id)
     
     ses = boto3.client('ses', region_name='eu-west-1')
 
@@ -76,7 +79,13 @@ def is_email_verified(user_id):
             return True
     return False
 
-    
+def verify_email(user_id):
+    email = get_email_address_from_user(user_id)
+    ses = boto3.client('ses', region_name='eu-west-1')
+    response = ses.verify_email_address(EmailAddress=email)
+    print("(verify email address link sent): to:"+email)
+    return response
+
 def get_index_of_blacklist_image(key, data):
     index = -1
     # no frames in the database
@@ -264,41 +273,50 @@ def lambda_handler(event, context):
                 }
                 resp = add_data(parameters)
             elif '/preferences/notifications' in route:
-                client = boto3.resource('dynamodb',region_name='af-south-1')
-                table = client.Table('UserData')
-                table.update_item(
-                    Key={"user_id": user_id},
-                    UpdateExpression='SET preferences.notifications.security_company = :security_company',
-                    ExpressionAttributeValues={
-                        ":security_company": params["security_company"]
-                    },
-                    ReturnValues="UPDATED_NEW"
-                )
-                print("updated security company number")
-                is_valid = True
-                resp = {}
-                if params['type'] == 'email':
-                    if not is_email_verified(user_id):
-                        is_valid = False
-                        print("TEMP: email NOT verified")
-                        resp.update({"email_verified":False})
-                    else:
-                        print("TEMP: email verified")
-                        resp.update({"email_verified":True})
-
-                if is_valid:
+                if 'verify' in route:
+                    response = verify_email(user_id)
+                    resp = {
+                        "response":response,
+                        "data":{
+                            "email_verification_sent":True
+                        }
+                    }
+                else:
+                    client = boto3.resource('dynamodb',region_name='af-south-1')
+                    table = client.Table('UserData')
                     table.update_item(
                         Key={"user_id": user_id},
-                        UpdateExpression='SET preferences.notifications.#type = :message_type',
+                        UpdateExpression='SET preferences.notifications.security_company = :security_company',
                         ExpressionAttributeValues={
-                            ":message_type": params["type"]
-                        },
-                        ExpressionAttributeNames={
-                            "#type": "type"
+                            ":security_company": params["security_company"]
                         },
                         ReturnValues="UPDATED_NEW"
                     )
-                    print("updated notification type preferences for "+params["type"])
+                    print("updated security company number")
+                    is_valid = True
+                    resp = {}
+                    if params['type'] == 'email':
+                        if not is_email_verified(user_id):
+                            is_valid = False
+                            print("TEMP: email NOT verified")
+                            resp.update({"email_verified":False})
+                        else:
+                            print("TEMP: email verified")
+                            resp.update({"email_verified":True})
+    
+                    if is_valid:
+                        table.update_item(
+                            Key={"user_id": user_id},
+                            UpdateExpression='SET preferences.notifications.#type = :message_type',
+                            ExpressionAttributeValues={
+                                ":message_type": params["type"]
+                            },
+                            ExpressionAttributeNames={
+                                "#type": "type"
+                            },
+                            ReturnValues="UPDATED_NEW"
+                        )
+                        print("updated notification type preferences for "+params["type"])
             else:
                 print('(ROUTE: /preferences')
                 parameters = {
