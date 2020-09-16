@@ -10,8 +10,8 @@ import uuid
 def error(msg, extra={}):
     return {
         "status": "ERROR",
-        "message": f'Encountered an Unexpected Error: {msg}',
-        **extra
+        "message": f"Encountered an Unexpected Error: {msg}",
+        **extra,
     }
 
 
@@ -19,18 +19,18 @@ def error(msg, extra={}):
 def success(msg, extra={}):
     return {
         "status": "OK",
-        "message": f'Operation Completed with Message: {msg}',
-        "data": {**extra}
+        "message": f"Operation Completed with Message: {msg}",
+        "data": {**extra},
     }
 
 
 def lambda_handler(event, context):
     # uploading of frame and fetching the corresponding user data from event object
-    user_id = event['requestContext']['authorizer']['claims']['sub']
-    name = event['queryStringParameters']['name']
+    user_id = event["requestContext"]["authorizer"]["claims"]["sub"]
+    name = event["queryStringParameters"]["name"]
     timestamp = str(datetime.datetime.now().timestamp())
-    filename = event['queryStringParameters']['filename']
-    filename = filename.replace(' ', '_')
+    filename = event["queryStringParameters"]["filename"]
+    filename = filename.replace(" ", "_")
     ext = filename.split(".")[-1]
     # key = os.environ['OBJECT_DIRECTORY'] + user_id+"_"+ str(hash(filename)) +"." + ext
     LENGTH_OF_UNIQUE_STRING = 6
@@ -41,41 +41,41 @@ def lambda_handler(event, context):
     fields = {
         "x-amz-meta-uuid": user_id,
         "x-amz-meta-name": name,
-        "x-amz-meta-timestamp": timestamp
+        "x-amz-meta-timestamp": timestamp,
     }
 
     # conditions = [{k:fields[k]} for k in fields]
     conditions = [
-        {'x-amz-meta-uuid': user_id},
-        {'x-amz-meta-name': name},
-        {'x-amz-meta-timestamp': timestamp}
+        {"x-amz-meta-uuid": user_id},
+        {"x-amz-meta-name": name},
+        {"x-amz-meta-timestamp": timestamp},
     ]
 
     resp = {}
     print(key)
     try:
         # generating a presigned link for S3 bucket
-        s3 = boto3.client('s3', region_name='eu-west-1')
+        s3 = boto3.client("s3", region_name="eu-west-1")
         resp = s3.generate_presigned_post(
-            Bucket='intruder.analysis',
+            Bucket="intruder.analysis",
             Key=key,
             Fields=fields,
             Conditions=conditions,
-            ExpiresIn=120
+            ExpiresIn=120,
         )
         resp = success("Link successfully Generated", resp)
         print(resp)
     except ClientError as e:
         print(e)
-        resp = error(f'{e}')
+        resp = error(f"{e}")
 
     return {
-        'statusCode': 200,
-        'headers': {
+        "statusCode": 200,
+        "headers": {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Methods": "*"
+            "Access-Control-Allow-Methods": "*",
         },
-        'body': json.dumps(resp)
+        "body": json.dumps(resp),
     }

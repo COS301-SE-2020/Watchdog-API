@@ -10,6 +10,7 @@ boto3 = "^1.14.58"
 requests = "^2.24.0"
 warrant = "^0.6.1"
 pytest = "^6.0.2"
+black = "^20.8b1"
 
 [tool.poetry.dev-dependencies]
 

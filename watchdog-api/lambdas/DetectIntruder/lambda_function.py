@@ -5,8 +5,9 @@ def lambda_handler(event, context):
     # get parameters from s3 object
     uuid, target, camera_id, timestamp, token = get_meta_data_from_event(event)
     print(
-        f"(1. Parameters): Detected Image: {target}; User ID: {uuid}; camera id:{camera_id}   timestamp:{timestamp}   token:{token}")
-    bucket = os.environ['BUCKET']
+        f"(1. Parameters): Detected Image: {target}; User ID: {uuid}; camera id:{camera_id}   timestamp:{timestamp}   token:{token}"
+    )
+    bucket = os.environ["BUCKET"]
 
     # define rekognition resource
     owner = False
@@ -18,20 +19,27 @@ def lambda_handler(event, context):
         io, index, source = is_owner(training_set, target, bucket)
 
         if security_level == 0:  # Disarmed ( no notifications are sent)
-            print("(4. security level): level:0;   description:Disarmed;   action:no notifications are sent")
-            log_message = "Watchdog has identified movement"
-        elif security_level == 1:  # Recognised Only (so intruder notifications are sent)
             print(
-                "(4. security level): level:1;   description:Recognised Only;   action:notifications are sent if the detected image is an owner")
+                "(4. security level): level:0;   description:Disarmed;   action:no notifications are sent"
+            )
+            log_message = "Watchdog has identified movement"
+        elif (
+            security_level == 1
+        ):  # Recognised Only (so intruder notifications are sent)
+            print(
+                "(4. security level): level:1;   description:Recognised Only;   action:notifications are sent if the detected image is an owner"
+            )
             if not io:
                 send_notification(preferences, target)
                 log_message = "Watchdog has identified a possible intruder, and has sent out a notificaiton!"
             else:
                 log_message = "Watchdog has identified the owner in your feed!"
-                if training_set[index]['monitor']['watch']:
+                if training_set[index]["monitor"]["watch"]:
                     send_notification(preferences, target, False, training_set[index])
         else:  # Armed (notifications are sent for any face detected)
-            print("(4. security level): level:2;   description:Armed;   action:notifications are sent")
+            print(
+                "(4. security level): level:2;   description:Armed;   action:notifications are sent"
+            )
             send_notification(preferences, target)
             log_message = "Watchdog has identified a face in your feed. if this is your face, consider changing your security to level 1, security has been notified"
 
@@ -44,15 +52,11 @@ def lambda_handler(event, context):
         # person is detected within 10 minutes, therefore, do not save image
         remove_s3_object(target)
 
-    resp = {
-        "response": response
-    }
+    resp = {"response": response}
     respObj = {
         "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": resp
+        "headers": {"Content-Type": "application/json"},
+        "body": resp,
     }
 
     return respObj

@@ -9,8 +9,10 @@ from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from botocore.client import Config
 from random import randint
 
-s3 = boto3.client('s3', config=Config(signature_version='s3v4'), region_name='eu-west-1')
-dynamo_client = boto3.client('dynamodb', region_name='af-south-1')
+s3 = boto3.client(
+    "s3", config=Config(signature_version="s3v4"), region_name="eu-west-1"
+)
+dynamo_client = boto3.client("dynamodb", region_name="af-south-1")
 
 
 def from_dynamodb_to_json(item):
@@ -19,31 +21,29 @@ def from_dynamodb_to_json(item):
 
 
 def get_profile_data(user_id):
-    '''
-        get profiles and whitelist data from database
-    '''
+    """
+    get profiles and whitelist data from database
+    """
     response = dynamo_client.query(
-        TableName='Artefacts',
-        ProjectionExpression='profiles, whitelist',
-        KeyConditionExpression=f'user_id = :user_id',
-        ExpressionAttributeValues={
-            ':user_id': {"S": user_id}
-        }
+        TableName="Artefacts",
+        ProjectionExpression="profiles, whitelist",
+        KeyConditionExpression=f"user_id = :user_id",
+        ExpressionAttributeValues={":user_id": {"S": user_id}},
     )
 
-    data = from_dynamodb_to_json(response['Items'][0])
-    profiles = data['profiles']
-    whitelist = data['whitelist']
+    data = from_dynamodb_to_json(response["Items"][0])
+    profiles = data["profiles"]
+    whitelist = data["whitelist"]
 
     return profiles, whitelist
 
 
 def get_profile_template_data(end_date, time_scale):
-    '''
-        get data skeleton list for graph plugin
-            1. get the time intervals
-            2. get data skeleton given intervals
-    '''
+    """
+    get data skeleton list for graph plugin
+        1. get the time intervals
+        2. get data skeleton given intervals
+    """
 
     intervals = -1
     HOURS = 0
@@ -74,15 +74,9 @@ def get_profile_template_data(end_date, time_scale):
     time_gap = timedelta(hours=HOURS, days=DAYS, weeks=WEEKS)
     for i in range(intervals - 1, -1, -1):
         x_step = end_date - (i * time_gap)
-        TEMP.append(x_step.strftime('%I%p'))
+        TEMP.append(x_step.strftime("%I%p"))
         inter.append(str(x_step.timestamp()))
-        data.append(
-            {
-                "images": [],
-                "x": x_step.strftime(time_format),
-                "y": 0
-            }
-        )
+        data.append({"images": [], "x": x_step.strftime(time_format), "y": 0})
     print(f"TEMP x-axis:{TEMP}")
     return data, inter
 
@@ -104,12 +98,9 @@ def generate_presigned_link(key):
     # generating a presigned link for S3 bucket
     try:
         response = s3.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': os.environ['BUCKET'],
-                'Key': key
-            },
-            ExpiresIn=3600
+            "get_object",
+            Params={"Bucket": os.environ["BUCKET"], "Key": key},
+            ExpiresIn=3600,
         )
     except ClientError as e:
         logging.error(e)
@@ -120,15 +111,13 @@ def generate_presigned_link(key):
 
 def get_location_from_camera_id(user_id, camera_id):
     response = dynamo_client.query(
-        TableName='UserData',
-        ProjectionExpression='control_panel',
-        KeyConditionExpression=f'user_id = :user_id',
-        ExpressionAttributeValues={
-            ':user_id': {"S": user_id}
-        }
+        TableName="UserData",
+        ProjectionExpression="control_panel",
+        KeyConditionExpression=f"user_id = :user_id",
+        ExpressionAttributeValues={":user_id": {"S": user_id}},
     )
-    data = from_dynamodb_to_json(response['Items'][0])
-    data = data['control_panel']
+    data = from_dynamodb_to_json(response["Items"][0])
+    data = data["control_panel"]
     location = None
     for site in data:
         for loc in data[site]:
@@ -140,24 +129,26 @@ def get_location_from_camera_id(user_id, camera_id):
 
 
 def populate_graph_data(graph_data, whitelist, intervals, user_id):
-    '''
-        populate graph skeleton with data from whitelist
-        1. check each whitelist and see if it is in correct range
-        2. if so, insert image object into correct profileat specific interval
-    '''
+    """
+    populate graph skeleton with data from whitelist
+    1. check each whitelist and see if it is in correct range
+    2. if so, insert image object into correct profileat specific interval
+    """
     for detected_owner in whitelist:
-        index = binsearch(intervals, detected_owner['timestamp'])
+        index = binsearch(intervals, detected_owner["timestamp"])
         if index != -1:
             for profile in graph_data:
-                if profile['aid'] == detected_owner['aid']:
-                    profile['data'][index]['images'].append(
+                if profile["aid"] == detected_owner["aid"]:
+                    profile["data"][index]["images"].append(
                         {
-                            "link": generate_presigned_link(detected_owner['key']),
-                            "timestamp": detected_owner['timestamp'],
-                            "location": get_location_from_camera_id(user_id, detected_owner['metadata']['camera_id']),
-                            "camera_id": detected_owner['metadata']['camera_id']
+                            "link": generate_presigned_link(detected_owner["key"]),
+                            "timestamp": detected_owner["timestamp"],
+                            "location": get_location_from_camera_id(
+                                user_id, detected_owner["metadata"]["camera_id"]
+                            ),
+                            "camera_id": detected_owner["metadata"]["camera_id"],
                         }
                     )
-                    profile['data'][index]['y'] = profile['data'][index]['y'] + 1
+                    profile["data"][index]["y"] = profile["data"][index]["y"] + 1
                     break
     return graph_data
