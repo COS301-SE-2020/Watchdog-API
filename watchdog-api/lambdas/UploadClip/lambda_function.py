@@ -4,6 +4,7 @@ import os
 import logging
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from datetime import datetime, timedelta
 
 
 def get_location_from_tag(tag):
@@ -21,7 +22,10 @@ def get_presigned_link(bucket, directory, region, event):
     file_name = event['queryStringParameters']['file_name']
     uuid = event['queryStringParameters']['user_id']
     camera_id = event['queryStringParameters']['camera_id']
-    timestamp = event['queryStringParameters']['timestamp']
+    # timestamp = event['queryStringParameters']['timestamp']
+    timestamp = datetime.now() + timedelta(hours=2)
+    timestamp = str(timestamp.timestamp())
+
     token = event['queryStringParameters']['token']
 
     s3 = boto3.client('s3', config=Config(signature_version='s3v4'), region_name=region)
@@ -40,7 +44,8 @@ def get_presigned_link(bucket, directory, region, event):
         {'x-amz-meta-timestamp': timestamp},
         {'x-amz-meta-token': token}
     ]
-    print("(2. Meta Data for object): x-amz-meta-uuid:" + uuid + " x-amz-meta-key:" + key + " x-amz-meta-tag:" + tag + " x-amz-meta-camera_id:" + camera_id + " x-amz-meta-timestamp:" + timestamp)
+    print(
+        "(2. Meta Data for object): x-amz-meta-uuid:" + uuid + " x-amz-meta-key:" + key + " x-amz-meta-tag:" + tag + " x-amz-meta-camera_id:" + camera_id + " x-amz-meta-timestamp:" + timestamp)
     try:
         response = s3.generate_presigned_post(
             Bucket=bucket,
