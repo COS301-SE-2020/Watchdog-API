@@ -34,7 +34,7 @@ def success(msg, extra={}):
     }
 
 
-def remove_profile_at_index(index, user_id):
+def remove_profile_at_index(index, user_id, type):
     index = int(index)
     dynamo_client = boto3.client('dynamodb', region_name='af-south-1')
     dynamo_resource = boto3.resource('dynamodb', region_name='af-south-1')
@@ -42,7 +42,7 @@ def remove_profile_at_index(index, user_id):
     response = dynamo_client.query(
         TableName='Artefacts',
         KeyConditionExpression=f'user_id = :user_id',
-        ProjectionExpression='profiles',
+        ProjectionExpression=type,
         ExpressionAttributeValues={
             ':user_id': {"S": user_id}
         }
@@ -50,14 +50,14 @@ def remove_profile_at_index(index, user_id):
     print("1. returned: " + str(response['Items'][0]))
     # response = json.loads(response)
     data = from_dynamodb_to_json(response['Items'][0])
-    _key = data['profiles'][index]['key']
+    _key = data[type][index]['key']
     table = dynamo_resource.Table('Artefacts')
     res = table.update_item(
         Key={
             "user_id": user_id
         },
-        UpdateExpression=f'REMOVE profiles[{index}]',
-        ConditionExpression=f'profiles[{index}].#key = :image_key',
+        UpdateExpression=f'REMOVE {type}[{index}]',
+        ConditionExpression=f'{type}[{index}].#key = :image_key',
         ReturnValues="UPDATED_NEW",
         ExpressionAttributeValues={
             ':image_key': _key
@@ -66,8 +66,8 @@ def remove_profile_at_index(index, user_id):
             '#key': "key"
         }
     )
-    print("profile: " + str(data['profiles'][index]))
-    return data['profiles'][index]
+    print("profile: " + str(data[type][index]))
+    return data[type][index]
 
 
 def move_whitelist_images(profile, user_id):
@@ -149,16 +149,20 @@ def lambda_handler(event, context):
     try:
         # the identities route to remove whitelisted images and profiles from the HCP
         if '/identities' in route:
+            type = params['type']
             index = params['index']
-            print("remove index " + index)
-            dynamo_client = boto3.client('dynamodb', region_name='af-south-1')
-            # get profile data
-            profile = remove_profile_at_index(index, user_id)
-            print(f"profile {profile}")
-            is_valid = False
-            while (is_valid == False):
-                is_valid = move_whitelist_images(profile, user_id)
-            resp = success(f'DELETE completed successfully on item: {index}', extra={})
+            if type == "profiles":
+                print("remove index " + index)
+                dynamo_client = boto3.client('dynamodb', region_name='af-south-1')
+                # get profile data
+                profile = remove_profile_at_index(index, user_id, type)
+                print(f"profile {profile}")
+                is_valid = False
+                while (is_valid == False):
+                    is_valid = move_whitelist_images(profile, user_id)
+                resp = success(f'DELETE completed successfully on item: {index}', extra={})
+            elif type == "blacklist":
+                blacklist = remove_profile_at_index(index, user_id, type)
         elif '/cameras' in route:
             site_id = params['site_id']
             location = params['location']
