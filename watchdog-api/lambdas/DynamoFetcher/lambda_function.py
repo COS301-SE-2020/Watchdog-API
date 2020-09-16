@@ -106,15 +106,19 @@ def lambda_handler(event, context):
             data = fetch_from_dynamo(user_id)
             resp = success(f'Dynamo GetItem Completed for {route}', extra=data)
         elif '/detectintruder' in route:
-            prjEx = 'identities.whitelist, preferences.notifications, preferences.security_level'
+            prjEx = 'preferences.notifications, preferences.security_level'
             data = fetch_from_dynamo(user_id, projectionExpression=prjEx)
+            prjEx = 'profiles'
+            profiles = fetch_from_dynamo(user_id, "profiles", "Artefacts")
 
             # Manip data to add presigned link:
-            for x, identity in enumerate(data['identities']['whitelist']):
+            for x, identity in enumerate(profiles['profiles']):
                 # Add index for identities (whitelist) to enable delete
-                data['identities']['whitelist'][x]['index'] = x
-                link = data['identities']['whitelist'][x]['key']
-                data['identities']['whitelist'][x]['path_in_s3'] = generate_presigned_link(link)
+                profiles['profiles'][x]['index'] = x
+                link = profiles['profiles'][x]['key']
+                profiles['profiles'][x]['path_in_s3'] = generate_presigned_link(link)
+            data.update(profiles)
+            print("data returned: " + str(data))
 
             resp = success(f'Dynamo GetItem Completed for {route}', extra=data)
         elif '/controlpanel' in route:
@@ -135,8 +139,8 @@ def lambda_handler(event, context):
 
         elif '/identities' in route:
             if '/tagdetectedimage' in route:
-                data = fetch_from_dynamo(user_id, projectionExpression="frames", tableName="Artefacts")
-                data = data['frames']
+                data = fetch_from_dynamo(user_id, projectionExpression="blacklist", tableName="Artefacts")
+                data = data['blacklist']
                 resp = []
                 print(f"(1. Retreive detected frame data): {data}")
                 for i in data:
@@ -144,14 +148,10 @@ def lambda_handler(event, context):
                         'key': i['key'],
                         'url': generate_presigned_link(i['key']),
                         'location': get_location_from_camera_id(user_id, i['metadata']['camera_id']),
-                        'timestamp': i['metadata']['timestamp']
+                        'timestamp': i['timestamp']
                     }
                     resp.append(temp)
-                resp = {
-                    "status": "OK",
-                    "message": f'Operation Completed with Message: Dynamo GetItem Completed for {route}',
-                    "data": json.dumps(resp)
-                }
+                resp = success(f"Dynamo GetItem Completed for {route}", extra={"frames": resp})
                 print(f"(2. response): response:{resp}")
             else:
                 data = fetch_from_dynamo(user_id, projectionExpression='identities')
