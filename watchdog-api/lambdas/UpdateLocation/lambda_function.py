@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 from boto3.dynamodb.types import TypeDeserializer
 
 
@@ -63,7 +64,7 @@ def lambda_handler(event, context):
         print(f"(2. site details): locations: {str(site_obj)}")
 
         site_obj = site_obj['control_panel']
-        if new_loc_name not in site_obj[site_id].keys():
+        if new_loc_name not in site_obj[site_id] and old_loc_name in site_obj[site_id]:
             site_obj[site_id][new_loc_name] = site_obj[site_id][old_loc_name]
             del site_obj[site_id][old_loc_name]
 
@@ -84,14 +85,16 @@ def lambda_handler(event, context):
                 print(f"(4. Updated Site): {str(site_obj)}")
                 response = success(msg=f'Dynamo UpdateItem Completed for "{route}"', extra=response)
                 print(f"(5. Response): {str(response)}")
+                statusCode = 200
             except Exception as e:
                 response = error(f'Could not complete Dynamo Operation due to Error: {e}')
                 print(str(response))
         else:
-            response = error(msg="location already exists for given site")
+            statusCode = 202
+            response = error(msg="new location already exists for given site, or the old one does not exist")
 
     return {
-        'statusCode': 200,
+        'statusCode': statusCode,
         'headers': {"Access-Control-Allow-Origin": "*"},
         'body': json.dumps(response)
     }
