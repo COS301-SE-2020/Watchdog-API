@@ -1,12 +1,14 @@
 from owner_analytics import *
 from dashboard_analytics import *
 
+
 def error(msg):
     return {
         "status": "ERROR",
         "message": f'Encountered an Unexpected Error: {msg}'
     }
-    
+
+
 # Bundle the response with an OK
 def success(msg, extra={}):
     return {
@@ -20,8 +22,9 @@ def lambda_handler(event, context):
     route = event['resource']
     params = event['queryStringParameters']
     user_id = event["requestContext"]["authorizer"]["claims"]["sub"]
-    
+
     end_date = params['end_date']
+    print(f"TEMP end date: {end_date}")
 
     if "profile" in route:
         time_scale = params['time_scale']
@@ -32,19 +35,18 @@ def lambda_handler(event, context):
             print(f"(1.1 get profile data): profiles:{profiles}    whitelist:{whitelist}")
             # 2. load data - go through whitelist images and add the images to specified list
             graph_skeleton, intervals = get_profile_template_data(end_date, time_scale)
-            print(f"(2.1 ): graph data skeleton:{graph_skeleton}  intervals: {intervals}")
+            print(f"(2): intervals: " + str(intervals))
             graph_data = []
             for profile in profiles:
                 graph_data.append(
                     {
-                        "id":profile["name"],
-                        "aid":profile["aid"],
-                        "color":f"hsl({randint(0,10)*36},50%,50%)",
-                        "data":deepcopy(graph_skeleton)
+                        "id": profile["name"],
+                        "aid": profile["aid"],
+                        "color": f"hsl({randint(0, 10) * 36},100%,50%)",
+                        "data": deepcopy(graph_skeleton)
                     }
                 )
-    
-            print(f"(2. graph skeleton data with profiles): data:{graph_data}")
+
             graph_data = populate_graph_data(graph_data, whitelist, intervals, user_id)
             print(f"(3. graph populated data): graph data:{graph_data}")
             resp = success(f"Successfully retrieved graph data for interval {time_scale}", graph_data)
@@ -61,13 +63,13 @@ def lambda_handler(event, context):
             for i, dataset in enumerate(datasets):
                 dataset['data'] = get_y_points_from_set(detected_images[i], intervals)
             data = {
-                "labels":labels,
-                "datasets":datasets
+                "labels": labels,
+                "datasets": datasets
             }
-            print("(3. data to return): data:"+str(data))
+            print("(3. data to return): data:" + str(data))
             resp = success(f"Successfully retrieved graph data", data)
         except Exception as e:
             print(e)
             resp = error(f'Could not complete Dashboard Analytics due to Error: {e}')
-        
-    return {"statusCode":200, "headers": {"Access-Control-Allow-Origin": "*"}, "body":json.dumps(resp)}
+
+    return {"statusCode": 200, "headers": {"Access-Control-Allow-Origin": "*"}, "body": json.dumps(resp)}

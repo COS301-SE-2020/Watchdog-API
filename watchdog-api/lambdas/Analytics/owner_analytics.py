@@ -7,7 +7,7 @@ from boto3.dynamodb.conditions import Key
 from datetime import datetime, timedelta, date
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from botocore.client import Config
-
+from random import randint
 
 s3 = boto3.client('s3', config=Config(signature_version='s3v4'), region_name='eu-west-1')
 dynamo_client = boto3.client('dynamodb', region_name='af-south-1')
@@ -30,7 +30,7 @@ def get_profile_data(user_id):
             ':user_id': {"S": user_id}
         }
     )
-    
+
     data = from_dynamodb_to_json(response['Items'][0])
     profiles = data['profiles']
     whitelist = data['whitelist']
@@ -44,56 +44,64 @@ def get_profile_template_data(end_date, time_scale):
             1. get the time intervals
             2. get data skeleton given intervals
     '''
-    
+
     intervals = -1
     HOURS = 0
     DAYS = 0
     WEEKS = 0
+    time_format = "%d %B %Y"
 
+    print(f"Time scale: {time_scale}")
     if time_scale == "DAILY":
-        intervals = 24   # 24 hours per day
-        HOURS = 1
+        intervals = 12  # 24 hours per day
+        HOURS = 2
+        time_format = "%I%p"
     elif time_scale == "WEEKLY":
-        intervals = 7   # 7 days per week
+        intervals = 7  # 7 days per week
         DAYS = 1
     elif time_scale == "MONTHLY":
-        intervals = 4   # 4 weeks per month
+        intervals = 4  # 4 weeks per month
         WEEKS = 1
-    
-    end_date = date.fromtimestamp(float(end_date))
-    end_date = datetime(end_date.year, end_date.month, end_date.day)
+
+    # end_date = date.fromtimestamp(float(end_date))
+    # end_date = datetime(end_date.year, end_date.month, end_date.day)
+    end_date = datetime.now() + timedelta(hours=2)
+    print(f"TEMP current end date: {end_date.strftime('%I%p')}")
     x_axis = []
     data = []
     inter = []
+    TEMP = []
     time_gap = timedelta(hours=HOURS, days=DAYS, weeks=WEEKS)
-    for i in range(intervals-1, -1, -1):
-        x_step = end_date - (i*time_gap)
+    for i in range(intervals - 1, -1, -1):
+        x_step = end_date - (i * time_gap)
+        TEMP.append(x_step.strftime('%I%p'))
         inter.append(str(x_step.timestamp()))
         data.append(
             {
-                "images":[],
-                "x": x_step.strftime("%d %B %Y"),
-                "y":0
+                "images": [],
+                "x": x_step.strftime(time_format),
+                "y": 0
             }
         )
-    
+    print(f"TEMP x-axis:{TEMP}")
     return data, inter
 
-def binsearch(t, key, low = 0, high = 0):
-	high = len(t) - 1
-	while low < high:
-		mid = (low + high)//2
-		if float(t[mid]) < float(key):
-			low = mid + 1
-		else:
-			high = mid
-	if float(t[low]) > float(key) and low > 0:
-	    low = low-1
-	return low if key >= t[0] else -1
+
+def binsearch(t, key, low=0, high=0):
+    high = len(t) - 1
+    while low < high:
+        mid = (low + high) // 2
+        if float(t[mid]) < float(key):
+            low = mid + 1
+        else:
+            high = mid
+    # 	if float(t[low]) > float(key) and low > 0:
+    # 	    low = low-1
+    return low if key >= t[0] else -1
 
 
 def generate_presigned_link(key):
-    #generating a presigned link for S3 bucket 
+    # generating a presigned link for S3 bucket
     try:
         response = s3.generate_presigned_url(
             'get_object',
@@ -150,6 +158,6 @@ def populate_graph_data(graph_data, whitelist, intervals, user_id):
                             "camera_id": detected_owner['metadata']['camera_id']
                         }
                     )
-                    profile['data'][index]['y'] = profile['data'][index]['y']+1
+                    profile['data'][index]['y'] = profile['data'][index]['y'] + 1
                     break
     return graph_data
