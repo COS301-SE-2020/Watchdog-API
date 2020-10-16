@@ -1,930 +1,334 @@
-# /cameras 
+# Watchdog API Documentation
 
-#### DELETE
-> This removes the selected camera from the control panel
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?camera_id=<camera_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+The following documentation details the routes, methods and transactions (in both request and response) facilitated by the Watchdog API with a provided guide on how to build a valid request to each possible  to receive a valid response. 
+It is worth noting that all OPTIONS methods exist purely to accommodate the integrative preflights of AWS and cannot be interacted with by the user, hence they won't be discussed in this documentation.
 
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches the camera and its information using camera_id
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?camera_id=<camera_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+## /analytics/dashboard 
 
-{
-    "status": "OK",
-    "camera": "camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-}
-}
-```
-#### POST
-> Registers a camera to a control panel
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-		"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+### GET 
 
-{
-    "status": "OK"
-}
-```
-#### PUT
-> Updates a camera of a control panel
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?camera_id=<camera_id>```
-- Request Body:
-```json
-{
-		"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-}
-```
-> This is a mock function.
+Description:
+The method which returns the dashboard of the user's analytics.
 
-# /controlpanel
+Parameters:
+- end_date
 
-#### DELETE
-> This removes the selected control panel from the user's account
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?site_id=<site_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+## /analytics/profiles 
 
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches the control panel and its information using site_id
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?site_id=<site_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+### GET 
 
-{
-    "status": "OK",
-    "control_panel": {
-		"site_id": {
-			"physical_address": "string",
-			"broadcast_ip": "",
-			"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-		}
-	}
-}
-```
-#### POST
-> Registers a control panel to a user
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-	"control_panel": {
-		"site_id": {
-			"physical_address": "string",
-			"broadcast_ip": "",
-			"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-		}
-	}
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+Description: 
+The method which returns the structured data of the profiles of the user's analytics.
 
-{
-    "status": "OK"
-}
-```
-#### PUT
-> Updates a control panel of a user
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?siteid=<site_id>```
-- Request Body:
-```json
-{
-	"control_panel": {
-		"site_id": {
-			"physical_address": "string",
-			"broadcast_ip": "",
-			"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-		}
-	}
-}
-```
-> This is a mock function.
+Parameters:
+- end_date
+- interval
 
-# /detectintruder
+## /cameras 
 
-#### GET
-> This fetches the trained images from the AWS services.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+### DELETE 
 
-{
-    "status": "OK",
-    "data": [
-        {
-            "training": [
-                "trained images come in here"
-            ],
-            "sns": {
-                "security_company":     "$item.preferences.M.sns.M.security_company.S",
-                "type": "$item.preferences.M.sns.M.type.S",
-                "value": "$item.preferences.M.sns.M.value.S"
-            }
+Description:
+The method to remove a camera registered on the Home Control Panel.
 
-        }
-    ]
-}
-}
-```
-#### POST
-> Uploads a detected image to S3
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-	"image": "<base64 encoding>",
-     "user_id": "string"
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+Parameters:
+- location
+- site_id
+- camera_id
 
-{
-    "status": "OK"
-}
-```
-# /identities
+### GET 
 
-#### DELETE
-> This removes the selected identity from the user's whitelist
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?identity_name=<identity_name>```
-- Response:
-```json
-Header1: something
-Header2: something
+Description:
+The method  to fetch all cameras and their subsequent details from the DynamoDB records (this includes their location, site_id, camera_id, metadata, etc.).
 
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches the identities whitelisted by the user.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+Parameters:
+- camera_id (optional)
+- site_id (optional)
 
-{
-    "status": "OK",
-    "identities": [
-		{
-			"path_in_s3":"",
-			"name": "",
-			"role": ""
-		}
-	]
-}
-```
-#### POST
-> Registers a identity to whitelist
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-		"identities": [
-		{
-			"path_in_s3":"",
-			"name": "",
-			"role": ""
-		}
-]
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+### POST 
 
-{
-    "status": "OK"
-}
-```
-#### PUT
-> Updates the list of whitelisted identities
-Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Request Body:
-```json
-{
-      
-	"identities" : 	{
-			"path_in_s3":"",
-			"name": "",
-			"role": ""
-		}
+Description:
+The method to register a new camera to the Home Control Panel and provide its necessary information.
 
-}
-```
-> This is a mock function.
+Parameters:
+- location
+- site_id
+- camera_id
 
-# /preferences
+### PUT 
 
-#### DELETE
-> This removes the preferences of the user
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+Description: 
+The method to update the details of a specified camera.
 
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches the preferences configured by the user
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+Parameters: 
+- location (optional)
+- metadata (optional)
 
-{
-    "status": "OK",
-    "preferences": {
-		"historical": {
-			"clip_length": 1,
-			"clip_gap": 1
-		}
-	}
-}
-```
-#### POST
-> Configures preferences of the user.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-     "preferences": {
-		"historical": {
-			"clip_length": integer,
-			"clip_gap": integer
-		}
-	}
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+## /controlpanel 
 
-{
-    "status": "OK"
-}
-```
-#### PUT
-> Updates the preferences.
-Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Request Body:
-```json
-{
-      "preferences": {
-		"historical": {
-			"clip_length": integer,
-			"clip_gap": integer
-		}
-	}
+### DELETE 
 
-}
-```
-> This is a mock function.
+Description:
+The method to remove a registered Home Control Panel.
 
-# /sites
+Parameters:
+- site_id
+### GET 
+
+Description:
+The method to fetch all Home Control Panels registered to the user and their subsequent information (site_id, metadata, etc.).
+
+Parameters:
+- site_id (optional)
+
+### POST 
+
+Description:
+The method to register a new Home Control Panel to the user and their account and provide its necessary information.
+
+Parameters:
+- site_id
+
+## /detectintruder 
+
+### GET 
+
+Description:
+The method to fetch all whitelisted identities, security preferences, notification preferences and other metadata. 
+
+Parameters:
+None. 
+
+## /identities 
+
+### DELETE 
+
+Description:
+The method to remove an identity from the user's identities records.
+
+Parameters:
+- index
+- type
+
+### GET 
+
+Description:
+The method to fetch all identities, both of whitelisted and blacklisted nature, accompanied with their relevant profile data in the API response.
+
+Parameters:
+- identityname (optional)
+
+## /identities/tagdetectedimage 
+
+### GET 
+
+Description:
+The method to fetch the tagged detected images relevant to an identity. 
+
+Parameters:
+None. 
+
+### POST 
+
+Description:
+The method to upload a tagged detected image relevant to an identity. The uploaded data will also be evaluated against the blacklisted images and their indexes. If an index is found, the blacklist record is removed and an image is added to a whitelisted profile. 
+
+Parameters:
+- key
+- name
+
+## /identities/upload 
+
+### POST 
+
+Description:
+The method to upload frames from an event and correlate this with the appropriate user data.
+
+Parameters:
+- filename
+- name
+
+## /identities/watchlist 
+
+### POST 
+
+Description:
+The method to add a watchlist that will keep watch over certain selected profiles.
+
+Parameters:
+- key
+- watch
+- message (optional)
+
+## /logs 
+
+### GET 
+
+Description:
+The method to fetch all logs and their related metadata from the user's system.
+
+Parameters:
+None. 
+
+### POST 
+
+Description:
+The method to append data (in base64 format) to the logs in the user's system.
+
+Parameters:
+No requirements in the request body.
+
+## /preferences 
+
+### DELETE 
+
+Description:
+The method to remove the configured preferences of the user (such as security or notifications) and reset them to default.
+
+Parameters:
+None.
+
+### GET 
+
+Description:
+The method to retrieved all configured preferences of the user.
+
+Parameters:
+None. 
+
+### POST 
+
+Description:
+The method to configure and tweak desirable preferences and store these in the user's profile.
+
+Parameters:
+None.
+
+## /preferences/notifications 
+
+### POST 
+
+Description:
+The method to select the preferences for the user's notifications (such as its frequency, the nature of the notifications and how it is received, etc.).
+
+Parameters:
+None.
+
+## /preferences/notifications/verify 
+
+### POST 
+
+Description:
+The method to register a verification model (and authorisation methods) regarding the notifications of the user .
+
+Parameters:
+None.
+
+## /preferences/securitylevel 
+
+### GET 
+
+Description:
+The method to retrieve the security level of the system based on the user's configured preferences.
+
+Parameters:
+None. 
+
+### POST 
+
+Description:
+The method to configure a desired security level by means of the preferences interface of the user.
+
+Parameters:
+None.
+
+## /sites 
+
+### DELETE 
+
+Description:
+The method to remove a site which the user has provided at a specified location.
+
+Parameters:
+- location
+- site_id
+
+### GET 
+
+Description:
+The method to fetch sites registered by the user on the system.
+
+Parameters:
+- site_id (optional)
+
+### POST 
+
+Description:
+The method to register a new site to which a user can employ Watchdog's security system.
+
+Parameters:
+- site_id
+
+## /storage/upload 
+
+### POST 
+
+Description:
+The method to upload a clip to the specified storage location from a specific camera and its feed.
+
+Parameters:
+- camera_id
+- user_id
+- filename
+- tag
+
+## /storage/video 
+
+### GET 
+
+Description:
+The method to fetch the videos from the artefacts table.
+
+Parameters:
+None.
+
+## /ui/recordings 
 
 
-#### DELETE
-> This removes the selected site from the user's account
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?site_id=<site_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+### GET 
 
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches the site requested by the user.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?site_id=<site_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+Description:
+The method to fetch all recordings from a specific location and project them to the user interface.
 
-{
-    "status": "OK",
-    "site": {
-		"site_id": {
-			"physical_address": "string",
-			"broadcast_ip": "",
-			"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-		}
-	}
-}
-```
-#### POST
-> Registers a site to the user. 
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-	"site": {
-		"site_id": {
-			"physical_address": "string",
-			"broadcast_ip": "",
-			"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-		}
-	}
+Parameters:
+None.
 
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+## /user 
 
-{
-    "status": "OK"
-}
-```
-#### PUT
-> Updates the site.
-Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?site_id=<site_id>```
-- Request Body:
-```json
-{
-      	"site": {
-		"site_id": {
-			"physical_address": "string",
-			"broadcast_ip": "",
-			"cameras": {
-				"camera_id": {
-					"name": "string",
-					"ip_address": {
-						"protocal": "",
-						"address": "",
-						"port": "",
-						"path": ""
-					}
-				}
-			}
-		}
-	}
+### DELETE 
 
-}
-```
-> This is a mock function.
+Description:
+The method to terminate a user's account.
 
-# /storage 
+Parameters:
+- user_id
 
-#### DELETE
-> This deletes the artefact item in storage (dynamoDB)
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+### GET 
 
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches the artefacts from the camera requested.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?camera_id=<camera_id>```
-- Response:
-```json
-Header1: something
-Header2: something
+Description:
+The method to fetch a user and its subsequent profile data from the system.
 
-{
-    "status": "OK",
-    "artefact" : {
-    "camera_id": "unique",
-  "frames": [
-    {
-      "aid": "",
-      "metadata": {
-        "ttl": "x"
-      },
-      "path_in_s3": ""
-    }
-  ],
-  "videos": [
-    {
-      "aid": "a",
-      "metadata": {
-        "ttl": "x"
-      },
-      "path_in_s3": "b",
-      "tag": "intruder"
-    }
-  ]
-}
-}
-```
-#### POST
-> An artefact is uploaded to storage. 
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-	"artefact" : {
-    "camera_id": "unique",
-  "frames": [
-    {
-      "aid": "",
-      "metadata": {
-        "ttl": "x"
-      },
-      "path_in_s3": ""
-    }
-  ],
-  "videos": [
-    {
-      "aid": "a",
-      "metadata": {
-        "ttl": "x"
-      },
-      "path_in_s3": "b",
-      "tag": "intruder"
-    }
-  ]
-}
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+Parameters:
+None. 
 
-{
-    "status": "OK"
-}
-```
-# /storage/upload
+### POST 
 
-#### POST
-> A clip is uploaded from a camera. 
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-	"file_name": "string",
-      "type": "string"
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
+Description:
+The method to register a new user for a Watchdog account.
 
-{
-    "status": "OK"
-}
-```
-# /storage/video
-
-#### GET
-> This fetches the video from a camera.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?camera_id=<camera_id>```
-- Response:
-```json
-Header1: something
-Header2: something
-
-{
-    "status": "OK",
-    "data": {
-        camera_id: [
-            {
-            	"videos": [
-            		{
-            			"aid": "string",
-            			"path_in_s3": "string",
-            			"metadata": {
-                  		    "tag": "string"
-                       			}
-            		}
-                     	]
-            	
-            }
-        ]
-    }
-}
-```
-# /user
-
-#### DELETE
-> This removes the user's account
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
-
-{
-    "status": "OK"
-}
-```
-#### GET
-> This fetches user and their account information.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Response:
-```json
-Header1: something
-Header2: something
-
-{
-    "status": "OK",
-    "data": {
-        	"user_id": "unique string",
-        	"name": "string",
-        	"email": "string",
-        	"phone": "string",
-        	"identities": [
-        		{
-        			"path_in_s3":"",
-        			"name": "",
-        			"role": ""
-        		}
-        	],
-        	"preferences": {
-        		"historical": {
-        			"clip_length": 1,
-        			"clip_gap": 1
-        		}
-        	},
-        	"control_panel": {
-        		"site_id": {
-        			"physical_address": "string",
-        			"broadcast_ip": "",
-        			"cameras": {
-        				"camera_id": {
-        					"name": "string",
-        					"ip_address": {
-        						"protocal": "",
-        						"address": "",
-        						"port": "",
-        						"path": ""
-        					}
-        				}
-        			}
-        		}
-        	},
-        }
-
-}
-```
-#### POST
-> A user registers on the Watchdog system.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```None```
-- Request Body:
-```json
-{
-	"name": "string",
-	"email": "string",
-	"phone": "string",
-     "password" : "string"
-}
-```
-- Response:
-```json
-Header1: something
-Header2: something
-
-{
-    "status": "OK"
-}
-```
-#### PUT
-> Updates a user's profile.
-- Headers:
-```json
-{
-    "Authorization": "<Cognito Access-Tocken>"
-}
-```
-- Query Parameters: ```/?user_id=<user_id>```
-- Request Body:
-```json
-{
-	"name": "string",
-	"email": "string",
-	"phone": "string",
-	"identities": [
-		{
-			"path_in_s3":"",
-			"name": "",
-			"role": ""
-		}
-	],
-	"preferences": {
-		"historical": {
-			"clip_length": integer,
-			"clip_gap": integer
-		}
-	}
-}
-```
-> This is a mock function.
-
-
-
-
-
+Parameters:
+- user_id
+ 
 
 
 
