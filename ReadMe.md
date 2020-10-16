@@ -3,32 +3,28 @@
 This repository contains all the code used in the API
 
 ### Watchdog Repositories
-|[Home Control Panel](https://github.com/COS301-SE-2020/Watchdog)|API|[Web Application](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/watchdog-frontend)|[Mobile Application](https://github.com/COS301-SE-2020/Watchdog-FrontEnd/tree/master/WatchdogApp)|[Stream Server](hhttps://github.com/COS301-SE-2020/Watchdog-Stream-Server)|
+|[Home Control Panel](https://github.com/COS301-SE-2020/Watchdog)|[API](https://github.com/COS301-SE-2020/Watchdog-API)|[Front End](https://github.com/COS301-SE-2020/Watchdog-FrontEnd)|[Stream Server](hhttps://github.com/COS301-SE-2020/Watchdog-Stream-Server)|
 |---|---|---|---|---|
 
 ### Project Description:
 
-For the South African household who need an efficient way to ensure their safety and security the Watchdog system is a home security system that utilizes machine 
-learning to identify an intruder and alert users and security companies on the potential breach. Unlike traditional surveillance systems that keep a backlog of 
-redundant video storage our product utilizes machine learning and a modern cloud architecture to deliver a real-time security system.
+Home break-ins was rated the [number one crime]( http://www.statssa.gov.za/publications/P0341/P03412018.pdf) in South Africa in 2018/2019 period. There were about [1,3 million incidences of housebreaking affecting 5,8% of households in South Africa. Approximately 48% of affected households reported incidences to the police.](http://www.statssa.gov.za/?p=12614)
 
-
-### Demo Videos
-- [LynkSolutions-Demo1](https://drive.google.com/file/d/1mdyx54MLTo0vTAEx2nm5wwFgWU_ULEks/view?usp=sharing)
-- [LynkSolutions-Demo2](https://drive.google.com/file/d/1JfVWYLl65t5PzllO-vNKPR-YlOt7DRnX/view?usp=sharing)
-- [LynkSolutions-Demo3](https://drive.google.com/file/d/1bSRqRJBJ-5sPx4G1vCkq2Al8BcTPFYOs/view?usp=sharing)
-
+Watchdog set out to increase the number of reports to the police by providing the home owner with real-time notifications of tangible evidence of when possible intruders have been identified in their IP camera feed.
 
 ### Documentation
-- [SRS Document - version 3](https://drive.google.com/file/d/1dWVx8BrT0Nt8GKdyHLqmjKYzg1aGlRWS/view?usp=sharing)
-- [Technical Installation Manual](https://drive.google.com/file/d/1ouZquOIizf8omvOCnzMCG-wwS2qJyhzi/view?usp=sharing)
-- [Watchdog User Manual](https://drive.google.com/file/d/1gu36_44IbnKeGjC61VaDXLu3mLKEqTvr/view?usp=sharing)
+
+* [Software Requirements Specification](https://drive.google.com/file/d/1D6Jx3BDj6xvC9bDXCHUg7lry4IerSvTl/view)
+
+- [Previous Software Requirements Specification Versions](https://drive.google.com/drive/folders/1g7gR9nS8uDv7q-Nas4mgqkys7NiExaZ3?usp=sharing)
+- [Technical Installation Manual](https://drive.google.com/file/d/1RbIdqNwSCoAh9eayC3P642kQt1qZFQ-0/view?usp=sharing)
+- [User Manual](https://drive.google.com/file/d/1FnLfaTkhfTK44cwfXVDfh9R2VatEGOh5/view?usp=sharing)
 - [Coding Standards Document](https://drive.google.com/file/d/1X4IsmHWHwBjvmg1aaUua1HiC6rs6w5pO/view?usp=sharing)
 - [Project Management Tool (Clubhouse)](https://app.clubhouse.io/lynksolutions/stories) (If you require access please email a team member and we will add you to our workspace, since clubhouse does not allow external viewing)
 
 
 ### Deployed Website Link:
-- [Watchdog System](https://master.dtul6cza66juk.amplifyapp.com/)
+- [Watchdog System](https://lynksolutions.watchdog.thematthew.me)
 
 <details><summary><h3>About the API</h3></summary>
 
